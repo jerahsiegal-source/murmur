@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from murmur import settings_ui
+from yappr import settings_ui
 
 
 class FakeWinreg:
@@ -45,7 +45,7 @@ def test_startup_toggle_writes_and_removes_run_value(monkeypatch):
     assert not settings_ui.startup_enabled()
     settings_ui.set_startup(True)
     assert settings_ui.startup_enabled()
-    assert fake.values[(settings_ui.RUN_KEY, "Murmur")] == settings_ui.startup_command()
+    assert fake.values[(settings_ui.RUN_KEY, "Yappr")] == settings_ui.startup_command()
     settings_ui.set_startup(False)
     assert not settings_ui.startup_enabled()
     settings_ui.set_startup(False)  # idempotent
@@ -55,4 +55,4 @@ def test_startup_command_uses_windowless_python():
     cmd = settings_ui.startup_command()
     exe = cmd.split('"')[1]
     assert Path(exe).name.lower() == "pythonw.exe" and Path(exe).exists()
-    assert cmd.endswith("-m murmur")
+    assert cmd.endswith("-m yappr")

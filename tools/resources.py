@@ -1,6 +1,6 @@
-"""Measure Murmur's footprint: idle RAM/CPU, RAM/CPU while transcribing, impact on another app, disk.
+"""Measure Yappr's footprint: idle RAM/CPU, RAM/CPU while transcribing, impact on another app, disk.
 
-Usage: python tools/resources.py   (the app must be running: python -m murmur)
+Usage: python tools/resources.py   (the app must be running: python -m yappr)
 """
 import os
 import sys
@@ -14,11 +14,11 @@ import psutil
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
-def murmur_procs():
+def yappr_procs():
     out = []
     for p in psutil.process_iter(["pid", "cmdline"]):
         cmd = " ".join(p.info["cmdline"] or [])
-        if ("-m murmur" in cmd) and "resources.py" not in cmd:
+        if ("-m yappr" in cmd) and "resources.py" not in cmd:
             out.append(p)
     return out
 
@@ -61,13 +61,13 @@ def dir_size(p: Path) -> float:
     return sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) / 1e6 if p.exists() else 0.0
 
 
-procs = murmur_procs()
+procs = yappr_procs()
 print("processes:", [(p.pid, " ".join(p.cmdline())[-30:]) for p in procs])
 rss, priv, cpu = snapshot(procs, 30)
 print(f"IDLE (model unloaded): working set {rss:.0f} MB, private {priv:.0f} MB, CPU {cpu:.2f}% of machine over 30 s")
 
 # transcription load inside this process, same engine/settings as the app
-from murmur.stt import Transcriber, background_priority  # noqa: E402
+from yappr.stt import Transcriber, background_priority  # noqa: E402
 
 base = bench()
 tr = Transcriber("nemo-parakeet-tdt-0.6b-v2", "int8", int(os.environ.get("STT_THREADS", "4")), 0)
@@ -101,4 +101,4 @@ print(f"other-app benchmark: {base:.3f}s idle vs {under:.3f}s during transcripti
 venv = Path(sys.prefix)
 hf = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
 models = sum(dir_size(d) for d in hf.glob("models--*parakeet*")) + sum(dir_size(d) for d in hf.glob("models--*silero*"))
-print(f"DISK: Python env {dir_size(venv):.0f} MB, speech models {models:.0f} MB, app code {dir_size(Path(__file__).resolve().parents[1] / 'murmur'):.1f} MB")
+print(f"DISK: Python env {dir_size(venv):.0f} MB, speech models {models:.0f} MB, app code {dir_size(Path(__file__).resolve().parents[1] / 'yappr'):.1f} MB")

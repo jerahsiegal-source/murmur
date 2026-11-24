@@ -1,5 +1,5 @@
 """Two dictations back to back (the second starts right after the first is released), plus a check
-that a non-text clipboard item survives. Needs the app running with MURMUR_FAKE_MIC set.
+that a non-text clipboard item survives. Needs the app running with YAPPR_FAKE_MIC set.
 
 Usage: python tools/e2e_back_to_back.py <wav seconds>
 """
@@ -14,12 +14,12 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from e2e_dictation import VK_LCONTROL, VK_LWIN, key, user32  # noqa: E402
-from murmur import paste  # noqa: E402
+from yappr import paste  # noqa: E402
 
 secs = float(sys.argv[1])
 
 # put a custom (non-text) item on the clipboard, like a copied image would be
-fmt = paste.user32.RegisterClipboardFormatW("Murmur Test Binary")
+fmt = paste.user32.RegisterClipboardFormatW("Yappr Test Binary")
 marker = b"not text, should survive" * 4
 assert paste._open_clipboard()
 paste.user32.EmptyClipboard()
@@ -30,12 +30,12 @@ paste.kernel32.GlobalUnlock(h)
 paste.user32.SetClipboardData(fmt, h)
 paste.user32.CloseClipboard()
 
-out = os.path.join(tempfile.gettempdir(), f"murmur_target_b2b_{os.getpid()}.json")
+out = os.path.join(tempfile.gettempdir(), f"yappr_target_b2b_{os.getpid()}.json")
 proc = subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "paste_target.py"), out])
 hwnd = 0
 for _ in range(100):
     time.sleep(0.05)
-    hwnd = user32.FindWindowW(None, "Murmur paste target")
+    hwnd = user32.FindWindowW(None, "Yappr paste target")
     if hwnd:
         break
 time.sleep(0.3)

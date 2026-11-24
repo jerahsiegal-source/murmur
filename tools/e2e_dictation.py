@@ -1,22 +1,22 @@
 """End-to-end dictation test: drives the real hotkeys against the running app.
 
 Usage: python tools/e2e_dictation.py <wav seconds> [handsfree]
-The app must be running with MURMUR_FAKE_MIC pointing at the same WAV.
+The app must be running with YAPPR_FAKE_MIC pointing at the same WAV.
 Prints the pasted text and the stop->paste latency.
 """
 import ctypes, json, os, subprocess, sys, tempfile, time
 from ctypes import wintypes
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from murmur.paste import INPUT, KEYBDINPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP
+from yappr.paste import INPUT, KEYBDINPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP
 
 user32 = ctypes.WinDLL("user32")
 user32.FindWindowW.restype = wintypes.HWND
 user32.GetForegroundWindow.restype = wintypes.HWND
 VK_LCONTROL, VK_SPACE = 0xA2, 0x20
-# Second chord key: Win for the real hotkey; Alt /Shift when MURMUR_TEST_CHORD=ctrl+alt / ctrl+shift (so tests don't
+# Second chord key: Win for the real hotkey; Alt /Shift when YAPPR_TEST_CHORD=ctrl+alt / ctrl+shift (so tests don't
 # also trigger other dictation apps bound to Ctrl+Win, e.g. Wispr Flow).
-VK_LWIN = {"alt": 0xA4, "shift": 0xA0}.get((os.environ.get("MURMUR_TEST_CHORD") or "ctrl+win").split("+")[1], 0x5B)
+VK_LWIN = {"alt": 0xA4, "shift": 0xA0}.get((os.environ.get("YAPPR_TEST_CHORD") or "ctrl+win").split("+")[1], 0x5B)
 
 
 def key(vk, up=False):
@@ -28,12 +28,12 @@ def key(vk, up=False):
 def main():
     secs = float(sys.argv[1])
     handsfree = len(sys.argv) > 2 and sys.argv[2] == "handsfree"
-    out = os.path.join(tempfile.gettempdir(), f"murmur_target_{os.getpid()}.json")
+    out = os.path.join(tempfile.gettempdir(), f"yappr_target_{os.getpid()}.json")
     p = subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "paste_target.py"), out])
     hwnd = 0
     for _ in range(100):
         time.sleep(0.05)
-        hwnd = user32.FindWindowW(None, "Murmur paste target")
+        hwnd = user32.FindWindowW(None, "Yappr paste target")
         if hwnd:
             break
     time.sleep(0.3)

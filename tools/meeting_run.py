@@ -2,7 +2,7 @@
 
 Usage: python tools/meeting_run.py <dir with mic.wav/sys.wav> <out_meetings_dir> [speed] [chunk_s]
 Prints RSS over time, then the transcript/summary paths. Uses the API key from Credential
-Manager / MURMUR_ANTHROPIC_API_KEY (Claude) or MURMUR_API_KEY (OpenAI-compatible) if present (for the summary); otherwise the summary is a placeholder.
+Manager / YAPPR_ANTHROPIC_API_KEY (Claude) or YAPPR_API_KEY (OpenAI-compatible) if present (for the summary); otherwise the summary is a placeholder.
 """
 import os
 import sys
@@ -15,10 +15,10 @@ import psutil
 import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from murmur.config import Store  # noqa: E402
-from murmur.llm import make_llm  # noqa: E402
-from murmur.meeting import MeetingSession, SR  # noqa: E402
-from murmur.stt import Transcriber  # noqa: E402
+from yappr.config import Store  # noqa: E402
+from yappr.llm import make_llm  # noqa: E402
+from yappr.meeting import MeetingSession, SR  # noqa: E402
+from yappr.stt import Transcriber  # noqa: E402
 
 src, out = Path(sys.argv[1]), Path(sys.argv[2])
 speed = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0

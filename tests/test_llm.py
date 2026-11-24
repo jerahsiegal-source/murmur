@@ -3,8 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from murmur.config import Store
-from murmur.llm import ClaudeClient, LLMClient, LLMError, make_llm, usage_summary
+from yappr.config import Store
+from yappr.llm import ClaudeClient, LLMClient, LLMError, make_llm, usage_summary
 
 
 class FakeMessages:
@@ -98,8 +98,8 @@ def test_keys_are_stored_per_provider(monkeypatch):
                            get_password=lambda svc, user: saved.get(user),
                            delete_password=lambda svc, user: saved.pop(user))
     monkeypatch.setitem(__import__("sys").modules, "keyring", fake)
-    monkeypatch.delenv("MURMUR_API_KEY", raising=False)
-    monkeypatch.delenv("MURMUR_ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("YAPPR_API_KEY", raising=False)
+    monkeypatch.delenv("YAPPR_ANTHROPIC_API_KEY", raising=False)
     Store.set_api_key("sk-ant-1", "claude")
     Store.set_api_key("sk-oa-1", "openai")
     assert Store.get_api_key("claude") == "sk-ant-1" and Store.get_api_key("openai") == "sk-oa-1"
@@ -108,11 +108,11 @@ def test_keys_are_stored_per_provider(monkeypatch):
 def test_env_key_override_only_applies_to_its_own_provider(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "keyring",
                         SimpleNamespace(get_password=lambda svc, user: None))
-    monkeypatch.setenv("MURMUR_ANTHROPIC_API_KEY", "sk-ant-env")
-    monkeypatch.delenv("MURMUR_API_KEY", raising=False)
+    monkeypatch.setenv("YAPPR_ANTHROPIC_API_KEY", "sk-ant-env")
+    monkeypatch.delenv("YAPPR_API_KEY", raising=False)
     assert Store.get_api_key("claude") == "sk-ant-env"
     assert Store.get_api_key("openai") == ""  # an Anthropic key is never handed to another server
-    monkeypatch.setenv("MURMUR_API_KEY", "sk-oa-env")
+    monkeypatch.setenv("YAPPR_API_KEY", "sk-oa-env")
     assert Store.get_api_key("openai") == "sk-oa-env" and Store.get_api_key("claude") == "sk-ant-env"
 
 
@@ -129,7 +129,7 @@ def test_env_key_override_only_applies_to_its_own_provider(monkeypatch):
     ("", False),
 ])
 def test_base_url_must_be_https_unless_local(url, ok):
-    from murmur.llm import base_url_problem
+    from yappr.llm import base_url_problem
     assert (base_url_problem(url) is None) is ok
 
 

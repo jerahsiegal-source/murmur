@@ -8,12 +8,12 @@ $runs = @(
   @("dictation30.wav", 33.6, "hold"), @("short.wav", 5.7, "hold"), @("long60.wav", 43.1, "hold"),
   @("dictation30.wav", 33.6, "handsfree")
 )
-$env:MURMUR_DATA_DIR = $DataDir
+$env:YAPPR_DATA_DIR = $DataDir
 $i = 0
 foreach ($r in $runs) {
   $i++
-  $env:MURMUR_FAKE_MIC = "$root\data\test\$($r[0])"
-  $p = Start-Process -FilePath $py -ArgumentList "-m","murmur" -PassThru -WindowStyle Hidden
+  $env:YAPPR_FAKE_MIC = "$root\data\test\$($r[0])"
+  $p = Start-Process -FilePath $py -ArgumentList "-m","yappr" -PassThru -WindowStyle Hidden
   Start-Sleep 3
   $out = & $py "$root\tools\e2e_dictation.py" $r[1] $r[2]
   "#$i $($r[0]) ($($r[1])s, $($r[2])): $(($out | Select-String 'RESULT') -replace 'RESULT ','')"

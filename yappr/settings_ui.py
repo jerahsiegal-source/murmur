@@ -20,13 +20,17 @@ RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 def startup_command() -> str:
     exe = Path(sys.executable)
     pyw = exe.with_name("pythonw.exe") if exe.name.lower() == "python.exe" else exe
-    return f'"{pyw}" -m murmur'
+    return f'"{pyw}" -m yappr'
+
+
+STARTUP_VALUE = "Yappr"
+LEGACY_STARTUP_VALUE = "Murmur"  # the app's old name
 
 
 def startup_enabled() -> bool:
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
-            winreg.QueryValueEx(k, "Murmur")
+            winreg.QueryValueEx(k, STARTUP_VALUE)
             return True
     except OSError:
         return False
@@ -35,12 +39,24 @@ def startup_enabled() -> bool:
 def set_startup(on: bool) -> None:
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
         if on:
-            winreg.SetValueEx(k, "Murmur", 0, winreg.REG_SZ, startup_command())
+            winreg.SetValueEx(k, STARTUP_VALUE, 0, winreg.REG_SZ, startup_command())
         else:
             try:
-                winreg.DeleteValue(k, "Murmur")
+                winreg.DeleteValue(k, STARTUP_VALUE)
             except OSError:
                 pass
+
+
+def migrate_startup() -> bool:
+    """If Murmur was set to start with Windows, start Yappr instead. Returns True if it changed anything."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE) as k:
+            winreg.QueryValueEx(k, LEGACY_STARTUP_VALUE)
+            winreg.SetValueEx(k, STARTUP_VALUE, 0, winreg.REG_SZ, startup_command())
+            winreg.DeleteValue(k, LEGACY_STARTUP_VALUE)  # its command (-m murmur) no longer exists
+            return True
+    except OSError:
+        return False
 
 
 class SettingsWindow:
@@ -49,7 +65,7 @@ class SettingsWindow:
         self.store: Store = app.store
         s = self.store.settings
         self.win = tk.Toplevel(root)
-        self.win.title("Murmur settings")
+        self.win.title("Yappr settings")
         self.win.geometry("640x520")
         self.win.minsize(560, 460)
         nb = ttk.Notebook(self.win)
@@ -156,7 +172,7 @@ class SettingsWindow:
 
         f = ttk.Frame(nb, padding=12)
         nb.add(f, text="Read aloud")
-        ttk.Label(f, text="Highlight text anywhere and press Ctrl+Alt+X. The voice runs on this PC: free, and Murmur "
+        ttk.Label(f, text="Highlight text anywhere and press Ctrl+Alt+X. The voice runs on this PC: free, and Yappr "
                           "never sends what you highlight anywhere.", wraplength=560).grid(
             row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
         self.voice_var = tk.StringVar(value=VOICES.get(s.read_voice, VOICES["af_heart"]))
@@ -180,7 +196,7 @@ class SettingsWindow:
         f = ttk.Frame(nb, padding=12)
         nb.add(f, text="General")
         self.startup_var = tk.BooleanVar(value=startup_enabled())
-        ttk.Checkbutton(f, text="Start Murmur when Windows starts", variable=self.startup_var).grid(row=0, column=0, columnspan=2, sticky="w")
+        ttk.Checkbutton(f, text="Start Yappr when Windows starts", variable=self.startup_var).grid(row=0, column=0, columnspan=2, sticky="w")
         self._check(f, 1, "Show the floating bar", "show_bar", s.show_bar)
         mics = [""] + self._input_devices()
         self.vars["mic_device"] = tk.StringVar(value=s.mic_device)
@@ -243,13 +259,13 @@ class SettingsWindow:
         if self.provider == "openai":  # the key would be sent there, so check before changing anything
             problem = base_url_problem(self.vars["llm_base_url"].get())
             if problem:
-                messagebox.showerror("Murmur", f"{problem}. Nothing was saved.", parent=self.win)
+                messagebox.showerror("Yappr", f"{problem}. Nothing was saved.", parent=self.win)
                 return
         try:
             for name, v in self.vars.items():
                 setattr(s, name, v.get())
         except tk.TclError as e:
-            messagebox.showerror("Murmur", f"Invalid value: {e}", parent=self.win)
+            messagebox.showerror("Yappr", f"Invalid value: {e}", parent=self.win)
             return
         s.retention_days = max(1, int(s.retention_days))
         self._apply_read_settings()
@@ -273,7 +289,7 @@ class SettingsWindow:
         else:
             self.app.bar.win.withdraw()
         self.app.reload_settings()
-        self.win.title("Murmur settings — saved")
+        self.win.title("Yappr settings — saved")
 
     def _apply_read_settings(self) -> None:
         from .tts import VOICES, clamp_speed

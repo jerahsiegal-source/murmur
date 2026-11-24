@@ -4,12 +4,12 @@ import json, os, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from e2e_dictation import key, user32  # noqa: E402  (tools/ is on sys.path when run directly)
 
-out = os.path.join(tempfile.gettempdir(), f"murmur_target_pl_{os.getpid()}.json")
+out = os.path.join(tempfile.gettempdir(), f"yappr_target_pl_{os.getpid()}.json")
 p = subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "paste_target.py"), out])
 hwnd = 0
 for _ in range(100):
     time.sleep(0.05)
-    hwnd = user32.FindWindowW(None, "Murmur paste target")
+    hwnd = user32.FindWindowW(None, "Yappr paste target")
     if hwnd:
         break
 time.sleep(0.3)

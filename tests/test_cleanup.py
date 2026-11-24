@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
-from murmur.cleanup import Cleaner, apply_dictionary, rule_clean, _looks_like_cleanup
-from murmur.llm import LLMError
+from yappr.cleanup import Cleaner, apply_dictionary, rule_clean, _looks_like_cleanup
+from yappr.llm import LLMError
 
 DICT = [{"word": "Acme", "sounds_like": ["akmi"]}, {"word": "Siobhan", "sounds_like": ["shivawn", "shiv on"]}]
 

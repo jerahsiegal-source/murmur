@@ -104,7 +104,7 @@ class MicRecorder:
             self._n, self._pending, self._all = 0, np.zeros(0, np.float32), []
         self._running = True
         self.started_at = time.monotonic()
-        fake = os.environ.get("MURMUR_FAKE_MIC")
+        fake = os.environ.get("YAPPR_FAKE_MIC")
         if fake:
             self._fake_thread = threading.Thread(target=self._fake_feed, args=(fake,), daemon=True)
             self._fake_thread.start()

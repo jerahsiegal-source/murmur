@@ -18,10 +18,10 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from murmur import tts  # noqa: E402
-from murmur.speech_text import clean_for_speech  # noqa: E402
+from yappr import tts  # noqa: E402
+from yappr.speech_text import clean_for_speech  # noqa: E402
 
-SHORT = ("Done. I fixed the paste bug in `murmur/paste.py:214` and reran the tests: all 74 pass. "
+SHORT = ("Done. I fixed the paste bug in `yappr/paste.py:214` and reran the tests: all 74 pass. "
          "See D:\\home\\me\\Documents\\Projects\\Voice-to-text\\loop\\progress.md for the log.")
 
 
@@ -30,8 +30,8 @@ def long_reply() -> str:
     for i in range(1, 31):
         paras.append(
             f"## Step {i}: update the module\n\n"
-            f"In step {i}, I changed `murmur/module_{i}.py` so it reads settings from "
-            f"D:\\home\\me\\AppData\\Local\\Murmur\\settings.json before it starts. **Why:** the old code "
+            f"In step {i}, I changed `yappr/module_{i}.py` so it reads settings from "
+            f"D:\\home\\me\\AppData\\Local\\Yappr\\settings.json before it starts. **Why:** the old code "
             f"loaded them twice, which made startup slower by about {i * 10} milliseconds, and it ignored "
             f"changes you made while it was running. I also added a test in tests/test_module_{i}.py that "
             f"fails on the old code and passes now, and I checked the docs at https://docs.python.org/3/library/json.html "

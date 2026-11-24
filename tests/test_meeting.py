@@ -1,6 +1,6 @@
 import numpy as np
 
-from murmur.meeting import Resampler, Track, merge_segments, SR
+from yappr.meeting import Resampler, Track, merge_segments, SR
 
 
 def test_echo_of_speakers_dropped_from_mic():
@@ -49,7 +49,7 @@ def test_track_rotates_chunks_and_pads(tmp_path):
 
 
 def test_fix_spacing():
-    from murmur.stt import fix_spacing
+    from yappr.stt import fix_spacing
 
     assert fix_spacing(" we agreed on$42,000 ") == "we agreed on $42,000"
 

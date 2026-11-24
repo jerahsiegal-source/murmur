@@ -1,4 +1,4 @@
-"""End-to-end read-aloud check against the running Murmur: real hotkeys, real app, real speakers.
+"""End-to-end read-aloud check against the running Yappr: real hotkeys, real app, real speakers.
 
 Focuses a window, selects all its text (Ctrl+A, or Ctrl+Shift+A in Windows Terminal), presses
 Ctrl+Alt+X like a person would, and records what the speakers play (WASAPI loopback) to measure
@@ -7,7 +7,7 @@ when sound actually starts, whether it has gaps, and that Ctrl+Alt+X again stops
     python tools/e2e_read.py --window "read-test" [--runs 3] [--listen 8] [--select ctrl+a]
                              [--pause] [--speed] [--out results.jsonl]
 
-Also checks the clipboard is unchanged afterwards. Needs Murmur running and the PC otherwise quiet.
+Also checks the clipboard is unchanged afterwards. Needs Yappr running and the PC otherwise quiet.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from murmur.paste import get_clipboard_text, set_clipboard_text  # noqa: E402
+from yappr.paste import get_clipboard_text, set_clipboard_text  # noqa: E402
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 ULONG_PTR = ctypes.c_size_t

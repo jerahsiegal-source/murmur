@@ -1,6 +1,6 @@
 """Turn highlighted text (often AI output) into something pleasant to listen to.
 
-- File paths are read as just the file name ("C:\\...\\murmur\\app.py:42" -> "app.py").
+- File paths are read as just the file name ("C:\\...\\yappr\\app.py:42" -> "app.py").
 - URLs are read as the site name ("https://www.github.com/a/b" -> "github.com").
 - Markdown symbols (**, #, bullets, table pipes, backticks, links) are not read out.
 - Fenced code blocks inside prose are replaced by "Code block." (read in full if the

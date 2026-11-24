@@ -3,8 +3,8 @@ import json
 import numpy as np
 import soundfile as sf
 
-from murmur.meeting import recover_unfinished, unfinished_meetings
-from murmur.storage import new_meeting_dir
+from yappr.meeting import recover_unfinished, unfinished_meetings
+from yappr.storage import new_meeting_dir
 
 
 class FakeTranscriber:
@@ -39,7 +39,7 @@ def test_interrupted_call_is_finished_and_its_audio_deleted(tmp_path):
 
     assert done == [d] and tr.pins == 0
     text = (d / "transcript.md").read_text(encoding="utf-8")
-    assert "first part" in text and "recovered after Murmur was closed" in text
+    assert "first part" in text and "recovered after Yappr was closed" in text
     assert "[0:05:01] **Me:** hello from Okafor" in text
     assert not audio.exists()
     assert json.loads((d / "state.json").read_text())["finished"] is True

@@ -1,25 +1,45 @@
 """Settings, paths and secrets.
 
 Everything user-specific lives outside the repo:
-- settings + dictionary + history:  %LOCALAPPDATA%\\Murmur
-- meeting notes:                     ~/Documents/Murmur/Meetings (changeable)
+- settings + dictionary + history:  %LOCALAPPDATA%\\Yappr
+- meeting notes:                     ~/Documents/Yappr/Meetings (changeable)
 - API key:                           Windows Credential Manager (via keyring)
+
+The app used to be called Murmur. `migrate_from_murmur()` copies an existing Murmur setup the first
+time Yappr starts and never deletes or moves the old files. MURMUR_* environment variables still work.
 """
 from __future__ import annotations
 
 import json
+import logging
 import os
+import shutil
 import threading
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
-APP_NAME = "Murmur"
-KEYRING_SERVICE = "Murmur"
+APP_NAME = "Yappr"
+LEGACY_APP_NAME = "Murmur"
+KEYRING_SERVICE = "Yappr"
+LEGACY_KEYRING_SERVICE = "Murmur"
 KEYRING_USER = "llm-api-key"  # OpenAI-compatible key (name kept for existing installs)
 KEYRING_USERS = {"openai": KEYRING_USER, "claude": "anthropic-api-key"}
 # Optional environment overrides (for scripts/tests), one per provider so a key can never be sent to the
-# other provider's server. MURMUR_API_KEY is the original name and stays OpenAI-compatible only.
-ENV_KEYS = {"openai": "MURMUR_API_KEY", "claude": "MURMUR_ANTHROPIC_API_KEY"}
+# other provider's server. YAPPR_API_KEY is the original name and stays OpenAI-compatible only.
+ENV_KEYS = {"openai": "YAPPR_API_KEY", "claude": "YAPPR_ANTHROPIC_API_KEY"}
+MIGRATED_MARKER = ".migrated-from-murmur"
+
+log = logging.getLogger(__name__)
+
+
+def getenv(name: str) -> str | None:
+    """YAPPR_X, falling back to the old MURMUR_X name."""
+    v = os.environ.get(name)
+    if v:
+        return v
+    if name.startswith("YAPPR_"):
+        return os.environ.get("MURMUR_" + name[len("YAPPR_"):]) or None
+    return None
 
 # Defaults applied when switching provider in Settings (model, $ per 1M input, $ per 1M output)
 PROVIDER_DEFAULTS = {
@@ -29,7 +49,7 @@ PROVIDER_DEFAULTS = {
 
 
 def data_dir() -> Path:
-    base = os.environ.get("MURMUR_DATA_DIR") or os.path.join(
+    base = getenv("YAPPR_DATA_DIR") or os.path.join(
         os.environ.get("LOCALAPPDATA", str(Path.home())), APP_NAME
     )
     p = Path(base)
@@ -37,8 +57,72 @@ def data_dir() -> Path:
     return p
 
 
+def legacy_data_dir() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / LEGACY_APP_NAME
+
+
 def default_meetings_dir() -> str:
     return str(Path.home() / "Documents" / APP_NAME / "Meetings")
+
+
+def legacy_meetings_dir() -> Path:
+    return Path.home() / "Documents" / LEGACY_APP_NAME / "Meetings"
+
+
+def migrate_from_murmur(new_root: Path, old_root: Path | None = None,
+                        old_meetings: Path | None = None, keyring_mod=None) -> list[str]:
+    """Carry an existing Murmur setup over to Yappr, once. Copies only; the Murmur files stay as they were.
+
+    - settings, dictionary, history, usage log and voice data: copied from old_root
+    - meeting notes: left where they are; settings keep pointing at them
+    - API keys: copied from the "Murmur" Credential Manager entries to "Yappr" ones
+    Returns a list of what was done (for the log). Safe to call on every start.
+    """
+    old_root = old_root or legacy_data_dir()
+    old_meetings = old_meetings or legacy_meetings_dir()
+    done: list[str] = []
+    marker = new_root / MIGRATED_MARKER
+    if marker.exists():
+        return done
+    new_root.mkdir(parents=True, exist_ok=True)
+
+    if old_root.is_dir() and not (new_root / "settings.json").exists():
+        for item in old_root.iterdir():
+            dest = new_root / ("yappr.log" if item.name == "murmur.log" else item.name)
+            if dest.exists():
+                continue
+            if item.is_dir():
+                shutil.copytree(item, dest)
+            else:
+                shutil.copy2(item, dest)
+            done.append(f"copied {item.name}")
+
+    # Meeting notes stay in Documents\Murmur\Meetings. Pin the setting so the new default doesn't hide them.
+    settings_path = new_root / "settings.json"
+    if old_meetings.is_dir():
+        try:
+            raw = json.loads(settings_path.read_text(encoding="utf-8")) if settings_path.exists() else {}
+        except Exception:
+            raw = None  # unreadable: leave it alone
+        if raw is not None and "meetings_dir" not in raw:
+            raw["meetings_dir"] = str(old_meetings)
+            settings_path.write_text(json.dumps(raw, indent=2), encoding="utf-8")
+            done.append(f"meeting notes stay in {old_meetings}")
+
+    try:
+        kr = keyring_mod
+        if kr is None:
+            import keyring as kr
+        for user in KEYRING_USERS.values():
+            old = kr.get_password(LEGACY_KEYRING_SERVICE, user)
+            if old and not kr.get_password(KEYRING_SERVICE, user):
+                kr.set_password(KEYRING_SERVICE, user, old)
+                done.append(f"copied API key {user}")
+    except Exception as e:  # no keyring backend: the user can paste the key again
+        done.append(f"API keys not copied ({e.__class__.__name__})")
+
+    marker.write_text("Copied from Murmur. The Murmur files were left in place.\n", encoding="utf-8")
+    return done
 
 
 @dataclass
@@ -139,7 +223,7 @@ class Store:
     # ---- secrets
     @staticmethod
     def get_api_key(provider: str = "openai") -> str:
-        env = os.environ.get(ENV_KEYS.get(provider, ENV_KEYS["openai"]))
+        env = getenv(ENV_KEYS.get(provider, ENV_KEYS["openai"]))
         if env:
             return env.strip()
         try:

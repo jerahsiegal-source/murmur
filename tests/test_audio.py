@@ -1,6 +1,6 @@
 import numpy as np
 
-from murmur.audio import SR, find_cut
+from yappr.audio import SR, find_cut
 
 
 def tone(sec, amp=0.3):
@@ -36,7 +36,7 @@ def test_prefers_longest_pause():
 
 
 def test_trim_silence_keeps_speech_drops_edges():
-    from murmur.audio import trim_silence
+    from yappr.audio import trim_silence
 
     a = np.concatenate([silence(2), tone(1), silence(3)])
     t = trim_silence(a)
@@ -44,6 +44,6 @@ def test_trim_silence_keeps_speech_drops_edges():
 
 
 def test_trim_silence_all_quiet_returns_empty():
-    from murmur.audio import trim_silence
+    from yappr.audio import trim_silence
 
     assert len(trim_silence(silence(2) + 0.001)) == 0

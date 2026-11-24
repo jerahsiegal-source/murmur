@@ -2,7 +2,7 @@ import json
 import time
 from datetime import datetime, timedelta, timezone
 
-from murmur import storage
+from yappr import storage
 
 
 def test_purge_removes_old_history_and_meetings_only(tmp_path):
@@ -17,7 +17,7 @@ def test_purge_removes_old_history_and_meetings_only(tmp_path):
     (data / "history.jsonl").write_text("\n".join(json.dumps(l) for l in lines) + "\n", encoding="utf-8")
     old = storage.new_meeting_dir(meetings, "Old call", datetime.now() - timedelta(days=91))
     new = storage.new_meeting_dir(meetings, "New call", datetime.now() - timedelta(days=2))
-    mine = meetings / "my own folder"  # not created by Murmur: must never be deleted
+    mine = meetings / "my own folder"  # not created by Yappr: must never be deleted
     mine.mkdir()
     (old / "transcript.md").write_text("x")
 

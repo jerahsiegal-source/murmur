@@ -2,37 +2,37 @@
 
 ## Your API key
 
-Murmur is "bring your own key". Here is exactly what happens to it.
+Yappr is "bring your own key". Here is exactly what happens to it.
 
-**Where it's stored.** When you click **Save** in Settings, the key goes to **Windows Credential Manager**, the same vault Windows uses for saved network passwords. Windows encrypts it with your Windows sign-in. There is one entry per provider (`Murmur / anthropic-api-key`, `Murmur / llm-api-key`). The key is never written to `settings.json`, the logs, the history, the cost log or anywhere in this repository. To see or remove it: Start → **Credential Manager** → **Windows Credentials** → entries starting with `Murmur`.
+**Where it's stored.** When you click **Save** in Settings, the key goes to **Windows Credential Manager**, the same vault Windows uses for saved network passwords. Windows encrypts it with your Windows sign-in. There is one entry per provider (`Yappr / anthropic-api-key`, `Yappr / llm-api-key`). The key is never written to `settings.json`, the logs, the history, the cost log or anywhere in this repository. To see or remove it: Start → **Credential Manager** → **Windows Credentials** → entries starting with `Yappr`.
 
 **Where it's sent.** Only to the AI provider you picked, in the request header:
 
 - Claude: `https://api.anthropic.com`, through Anthropic's official SDK.
-- OpenAI-compatible: the **Base URL** you set. It must start with `https://`. Plain `http://` is allowed only for `localhost`, for a model server running on your own computer. Murmur refuses to follow redirects with your key attached.
+- OpenAI-compatible: the **Base URL** you set. It must start with `https://`. Plain `http://` is allowed only for `localhost`, for a model server running on your own computer. Yappr refuses to follow redirects with your key attached.
 
-There is no Murmur server and no telemetry. Murmur never sends your key anywhere else.
+There is no Yappr server and no telemetry. Yappr never sends your key anywhere else.
 
 **What's logged.** Errors are logged without the key. The cost log (`usage.jsonl`) records token counts and prices only.
 
-**Environment variables (optional, for scripts).** `MURMUR_ANTHROPIC_API_KEY` overrides the stored Claude key, and `MURMUR_API_KEY` overrides the stored OpenAI-compatible key. Each one is used only for its own provider.
+**Environment variables (optional, for scripts).** `YAPPR_ANTHROPIC_API_KEY` overrides the stored Claude key, and `YAPPR_API_KEY` overrides the stored OpenAI-compatible key. Each one is used only for its own provider.
 
 ### What this can't protect against
 
-Credential Manager is tied to your Windows account. Any program running as you can read it, including malware you've already installed. That's true of every desktop app that remembers a key. Two habits matter more than anything Murmur can do:
+Credential Manager is tied to your Windows account. Any program running as you can read it, including malware you've already installed. That's true of every desktop app that remembers a key. Two habits matter more than anything Yappr can do:
 
 1. **Set a spending limit** in your provider's console (Anthropic and OpenAI both offer monthly limits). Then even a stolen key can only cost you a set amount.
-2. **Use a key just for Murmur**, so you can revoke it without breaking anything else.
+2. **Use a key just for Yappr**, so you can revoke it without breaking anything else.
 
 If you think a key has leaked, **revoke it in your provider's console** and create a new one. Deleting it from a file or from git history does not make a leaked key safe again.
 
 ## Forks and downloads
 
-Murmur is open source, so anyone can publish a modified copy. A modified copy can send your key anywhere, and no app can prevent that. Install from the official repository, or read the changes before you trust a fork with a key. The key handling is all in `murmur/config.py` (storage) and `murmur/llm.py` (sending).
+Yappr is open source, so anyone can publish a modified copy. A modified copy can send your key anywhere, and no app can prevent that. Install from the official repository, or read the changes before you trust a fork with a key. The key handling is all in `yappr/config.py` (storage) and `yappr/llm.py` (sending).
 
 ## For contributors
 
-- Never commit keys, `.env` files, recordings or anything from `%LOCALAPPDATA%\Murmur`. `.gitignore` already excludes the usual ones.
+- Never commit keys, `.env` files, recordings or anything from `%LOCALAPPDATA%\Yappr`. `.gitignore` already excludes the usual ones.
 - Turn on the pre-commit secret scan once per clone. It blocks a commit that would add a key, a private calendar link, an email address, a Windows user path or a recording:
 
   ```powershell
