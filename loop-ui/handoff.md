@@ -22,7 +22,7 @@
 
 ## Decisions waiting on you
 1. ~~Window memory~~ **Decided 2026-11-24: keep pywebview.** The owner accepted about 237 MB while the window is open (freed on close; idle unchanged).
-2. **Font:** DESIGN.md says Atkinson Hyperlegible, bundled. The build uses Segoe UI Variable (built into Windows), because bundling Atkinson means downloading its font files (free, OFL licence), which needs your OK. Download and bundle it, or keep Segoe?
+2. ~~Font~~ **Decided 2026-11-24: keep Segoe UI Variable.** DESIGN.md updated.
 3. **D2 sign-off** on `loop-ui/review.html`.
 
 ## Not done (needs a person or a clean machine)

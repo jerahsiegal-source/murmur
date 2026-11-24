@@ -5,7 +5,7 @@ Source: `branding/yappr-icon.svg` (Skip the dog, the master icon) and the owner'
 ## Brand
 - Colors: butter #ffe9a8 (highlight, primary buttons on dark), bark #5a3524 (accent), ink #2a1810 (text, dark surfaces), cream #fbf8f3 (background), tan #d9a46c / fawn #e8c39a (Skip's details), rose #ef8a9a (sparingly: recording, alerts with a word). Success #2e7d4f, danger #c8433f (default).
 - Dark mode: background #1a1411, surface #241b17, ink #f4ebe0, muted #bba897, line #3a2d25, accent butter #ffe9a8.
-- Type: body Atkinson Hyperlegible, bundled with the app (never downloaded at runtime), with Segoe UI Variable as the fallback. Headings in the same family at 600–700. Numbers use tabular figures. (default)
+- Type: Segoe UI Variable (built into Windows; owner's choice 2026-11-24 over bundling Atkinson Hyperlegible). Headings in the same family at 600–700. Numbers use tabular figures.
 - Shape: radius 12–14px for windows and panels, 999px for the bar and chips, thin 1px lines, soft shadows only on floating things (the bar, prompts).
 - Logo: Skip appears on the bar, in the title bar, and on first run. Never stretched or recoloured.
 - Voice: plain, warm, brief. Say what happens ("Take notes now"), not how it works.

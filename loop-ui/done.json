@@ -15,7 +15,7 @@
   "kind": "user-facing",
   "status": "blocked",
   "attempts": 1,
-  "evidence": "Captures ready for owner sign-off in loop-ui/review.html (before/after: bar states, meeting prompt, every window page light+dark, live first run, Notes, My words, Settings, bar drag/menu/hide, read-aloud bar messages; tray menu + installer described in text). Waiting on: owner sign-off, and the owner's call on the font (DESIGN.md says Atkinson Hyperlegible bundled; build uses Segoe UI Variable because bundling means downloading font files)."
+  "evidence": "Captures ready for owner sign-off in loop-ui/review.html (before/after: bar states, meeting prompt, every window page light+dark, live first run, Notes, My words, Settings, bar drag/menu/hide, read-aloud bar messages; tray menu + installer described in text). Waiting on: owner sign-off (font decided: Segoe UI Variable, owner 2026-11-24)."
  },
  {
   "id": "D3",
