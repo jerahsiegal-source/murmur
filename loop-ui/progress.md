@@ -37,3 +37,10 @@ Base: rename/yappr-app @ 955d29e · Branch: ui/v1 (worktree ../yappr-ui, so the 
 - F8 tray page ignored when window open: fixed (Api.take_page, page polls every 0.8 s while open). Test added.
 - F9 back-to-back counter: script takes the expected word; reran.
 - F11 esc() on numbers: done. F12 plain connection errors: plain_error(), test added.
+
+## Review round 2: blockers F1-F3 closed; F5/F6 owner decisions; new F13 should + nits
+- F13 fixed: open_window() without a page only brings the window forward; window_page is set only for a specific page. Test test_open_yappr_doesnt_move_an_open_window.
+- F14 fixed: a leftover page request is cleared when a new window starts.
+- F15 fixed: "rate limit"/"rate_limit" instead of "rate". Test added.
+- F16: pywebview sets AreDefaultScriptDialogsEnabled = True (webview/platforms/edgechromium.py on_webview_ready), so confirm() shows the native dialog; owner checks it in staging step 8.
+- Stopping review here: no blocker or should open except owner decisions (F5 memory, F6 font, F7 tray screenshot -> D2 sign-off).

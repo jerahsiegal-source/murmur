@@ -114,6 +114,7 @@ def test_connection_errors_are_plain():
     assert "key wasn't accepted" in plain_error(Exception("Error code: 401 - invalid x-api-key"))
     assert "internet" in plain_error(TimeoutError("timed out"))
     assert "Couldn't reach" in plain_error(OSError("[WinError 10061] connection refused"))
+    assert "out of credit" not in plain_error(Exception("could not generate a reply"))
     for e in (Exception("401"), TimeoutError(), OSError("getaddrinfo failed"), Exception("weird")):
         assert "Error" not in plain_error(e) and "Win" not in plain_error(e)
 
@@ -246,3 +247,18 @@ def test_page_requests_reach_an_open_window(app):
     app.window_page = "settings"
     assert a.take_page() == "settings"
     assert a.take_page() == ""  # taken once
+
+
+def test_open_yappr_doesnt_move_an_open_window(monkeypatch):
+    """Tray/bar 'Open Yappr' only brings the window forward (it mustn't drop the welcome or the page you're on);
+    'Settings' or 'Meeting notes' switch it."""
+    from yappr import app as app_mod
+
+    monkeypatch.setattr(app_mod, "focus_process_window", lambda pid: None)
+    a = object.__new__(app_mod.App)
+    a.window_proc = SimpleNamespace(poll=lambda: None, pid=1)
+    a.window_page = ""
+    a.open_window()
+    assert a.window_page == ""
+    a.open_window("settings")
+    assert a.window_page == "settings"

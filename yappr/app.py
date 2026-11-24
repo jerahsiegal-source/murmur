@@ -480,13 +480,16 @@ class App:
     def open_settings(self) -> None:
         self.open_window("settings")
 
-    def open_window(self, page: str = "today") -> None:
+    def open_window(self, page: str = "") -> None:
         """Show the Yappr window (Today, Notes, My words, Settings, or the welcome)."""
         p = self.window_proc
         if p is not None and p.poll() is None:
-            self.window_page = page  # the open window picks this up (Api.take_page) and switches to it
+            if page:  # only a specific request moves an open window; "Open Yappr" just brings it forward
+                self.window_page = page  # picked up by the page (Api.take_page)
             focus_process_window(p.pid)
             return
+        self.window_page = ""  # a request left over from a window that has since closed
+        page = page or "today"
         env = dict(os.environ, YAPPR_WINDOW_PIPE=self.api_server.address, YAPPR_WINDOW_KEY=self.api_server.key.hex())
         exe = Path(sys.executable)
         exe = exe.with_name("pythonw.exe") if exe.name.lower() == "python.exe" and exe.with_name("pythonw.exe").exists() else exe

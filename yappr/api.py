@@ -78,7 +78,7 @@ def plain_error(e: Exception) -> str:
         return "The key works but isn't allowed to use this model. Check your account with the AI service."
     if "404" in s or "not found" in s or "model" in s and "exist" in s:
         return "The service didn't recognise the address or model name. Check both under More AI options."
-    if any(x in s for x in ("429", "rate", "quota", "credit", "billing", "insufficient")):
+    if any(x in s for x in ("429", "rate limit", "rate_limit", "quota", "credit", "billing", "insufficient")):
         return "The AI service says the account is out of credit or busy. Check billing on its website."
     if any(x in s for x in ("timeout", "timed out")):
         return "The AI service took too long to answer. Check your internet connection and try again."
