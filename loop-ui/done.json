@@ -1,0 +1,65 @@
+[
+ {
+  "id": "D1",
+  "item": "Look chosen first. Design directions are shown with `/explore`, using the existing Yappr name, logo and colours (`branding/`). The owner picks one, and it is written down as the fixed design (e.g. `DESIGN.md`) before the build starts.",
+  "check": "the owner's pick, recorded",
+  "kind": "judgment",
+  "status": "pass",
+  "attempts": 0,
+  "evidence": "Owner pick 2026-11-24 recorded in DESIGN.md (commit f76cf07)"
+ },
+ {
+  "id": "D2",
+  "item": "Every visible surface uses the chosen design: pill, tray icon and menu, Settings (all of AI cleanup, Dictionary, Meetings, History, General), meeting prompt, notes/history views, read-aloud UI, installer and first launch.",
+  "check": "before and after screenshots of every surface, in light and dark mode, signed off by the owner",
+  "kind": "user-facing",
+  "status": "pending",
+  "attempts": 0,
+  "evidence": ""
+ },
+ {
+  "id": "D3",
+  "item": "First-run setup exists. On a fresh install, a new person is guided to do their first dictation (Ctrl+Win) and, if they want, add an AI key. Both take about 2 minutes, guided only by the app.",
+  "check": "a timed walkthrough on a clean profile in the real app, with screenshots",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Real app, brand-new profile (tools/e2e_first_run.py): welcome opens by itself 0.6 s after start (log) and is ready ~3.3 s after launch; first dictation (6 s talk, Ctrl+Shift test chord) lands in the practice box with the success line, ready 0.38 s after release; AI helper added inside the welcome via a local fake OpenAI-compatible service -> 'Connected. Key saved.'; welcome done -> Today checklist 2 of 3; next dictation method=llm. Screens: loop-ui/shots/first-run-1..6.png, live-welcome*.png. Script wall time is inflated by the harness's process scan; owner repeats by hand with a real Claude key (staging checklist)."
+ },
+ {
+  "id": "D4",
+  "item": "No jargon on screen. Terms like STT, base URL, tokens or provider never appear without a plain-language explanation.",
+  "check": "a review of every on-screen string, with each term listed and how it is handled",
+  "kind": "judgment",
+  "status": "pending",
+  "attempts": 0,
+  "evidence": ""
+ },
+ {
+  "id": "D5",
+  "item": "End-to-end: fresh install -> first run -> dictation pastes -> a meeting is recorded and its notes are shown -> read-aloud works, all in the redesigned UI.",
+  "check": "a run in the real app, with screenshots",
+  "kind": "user-facing",
+  "status": "pending",
+  "attempts": 0,
+  "evidence": ""
+ },
+ {
+  "id": "D6",
+  "item": "No regressions: dictation, hands-free, Alt+Shift+Z re-paste, meetings, read-aloud, dictionary and history all behave as before.",
+  "check": "The existing test suite passes, and the `tools/e2e_*` scripts pass.",
+  "kind": "regression",
+  "status": "pending",
+  "attempts": 0,
+  "evidence": ""
+ },
+ {
+  "id": "D7",
+  "item": "Not slower: hotkey -> paste latency, startup time and idle memory are no worse than before.",
+  "check": "numbers measured before and after",
+  "kind": "regression",
+  "status": "pending",
+  "attempts": 0,
+  "evidence": ""
+ }
+]
