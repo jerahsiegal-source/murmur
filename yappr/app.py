@@ -324,7 +324,7 @@ class App:
                 self.bar.toast(f"✓ Pasted {n} word{'s' if n != 1 else ''}", 1.6)
         except Exception:
             log.exception("dictation failed")
-            self.bar.toast("Something went wrong")
+            self.bar.toast("Something went wrong. Please try again")
         finally:
             with self.lock:
                 self.pending -= 1
@@ -360,16 +360,16 @@ class App:
                 m.stop()
                 if not self.recording:
                     self.bar.set_state("idle")
-                self.bar.toast("Transcribing the rest…", 4)
+                self.bar.toast("Finishing your notes…", 4)
                 return
             s = self.store.settings
             try:
                 m = MeetingSession(Path(s.meetings_dir), title or "Meeting", self.transcriber, self.llm, s,
                                    on_status=self._meeting_status, dictionary=lambda: self.store.dictionary)
                 m.start()
-            except Exception as e:
+            except Exception:
                 log.exception("meeting start failed")
-                self.bar.toast(f"Couldn't start recording: {e}"[:60], 4)
+                self.bar.toast("Couldn't start recording. Check your microphone.", 4)
                 return
             with self.meeting_lock:
                 self.meeting = m
@@ -394,13 +394,13 @@ class App:
 
     def _meeting_status(self, status: str) -> None:
         if status == "summarizing":
-            self.bar.toast("Writing summary…", 6)
+            self.bar.toast("Writing your meeting notes…", 6)
         elif status == "done":
-            self.bar.toast("Meeting notes saved", 4)
+            self.bar.toast("✓ Meeting notes ready. Open Yappr to read them", 4)
         elif status == "error":
-            self.bar.toast("Meeting notes failed — see log", 5)
+            self.bar.toast("Couldn't finish the notes. Try again in Yappr → Notes", 5)
         elif status == "device-error":
-            self.bar.toast("Audio device changed — couldn't follow it", 6)
+            self.bar.toast("Your speakers or mic changed, and Yappr couldn't follow", 6)
 
     def finished_meeting_dirs(self) -> list[Path]:
         d = Path(self.store.settings.meetings_dir)
@@ -486,7 +486,7 @@ class App:
             log.info("window opened (%s)", page)
         except Exception:
             log.exception("could not open the window")
-            self.bar.toast("Couldn't open Yappr's window — see log", 4)
+            self.bar.toast("Couldn't open Yappr. Try again from the tray icon", 4)
 
     def close_window(self) -> None:
         p = self.window_proc
