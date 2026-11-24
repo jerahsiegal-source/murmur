@@ -153,6 +153,9 @@ def test_redirects_are_not_followed_with_the_key(tmp_path):
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
             seen.append((self.path, self.headers.get("Authorization")))
+            # read the body first: replying while the client is still sending makes Windows reset
+            # the connection (WinError 10053) instead of delivering the redirect - a flaky test
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
             self.send_response(302)
             self.send_header("Location", "/stolen")
             self.send_header("Content-Length", "0")

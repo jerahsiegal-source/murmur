@@ -24,12 +24,17 @@ def murmur_procs():
 
 
 def snapshot(procs, secs=10):
+    def safe(fn, p):
+        try:
+            return fn(p)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return 0  # the app was restarted mid-measurement
     for p in procs:
-        p.cpu_percent(None)
+        safe(lambda q: q.cpu_percent(None), p)
     time.sleep(secs)
-    rss = sum(p.memory_info().rss for p in procs) / 1e6
-    priv = sum(p.memory_full_info().private for p in procs) / 1e6
-    cpu = sum(p.cpu_percent(None) for p in procs) / psutil.cpu_count()
+    rss = sum(safe(lambda q: q.memory_info().rss, p) for p in procs) / 1e6
+    priv = sum(safe(lambda q: q.memory_full_info().private, p) for p in procs) / 1e6
+    cpu = sum(safe(lambda q: q.cpu_percent(None), p) for p in procs) / psutil.cpu_count()
     return rss, priv, cpu
 
 
