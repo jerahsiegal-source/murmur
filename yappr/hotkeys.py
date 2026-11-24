@@ -43,7 +43,7 @@ MODIFIERS = CTRL | WIN | SHIFT | ALT
 GROUPS = {"ctrl": CTRL, "win": WIN, "alt": ALT, "shift": SHIFT}
 
 # dwExtraInfo tag on events we inject ourselves, so the hook ignores them.
-MURMUR_TAG = 0x4D55524D  # "MURM"
+YAPPR_TAG = 0x59415052  # "YAPR"
 
 IDLE, HOLD, HANDSFREE = "idle", "hold", "handsfree"
 
@@ -53,7 +53,7 @@ class HotkeyMachine:
 
     def __init__(self, chord: str = "ctrl+win") -> None:
         """`chord` is two modifier names. Ctrl+Win is the product hotkey; tests may pass another
-        pair (via MURMUR_TEST_CHORD) so they don't also trigger other dictation apps."""
+        pair (via YAPPR_TEST_CHORD) so they don't also trigger other dictation apps."""
         names = chord.lower().split("+")
         if len(names) != 2 or not all(n in GROUPS for n in names):
             raise ValueError(f"bad chord {chord!r}")
@@ -196,7 +196,7 @@ class KeyboardHook:
     def __init__(self, on_event: Callable[[str], None]):
         import os
 
-        self.machine = HotkeyMachine(os.environ.get("MURMUR_TEST_CHORD") or "ctrl+win")
+        self.machine = HotkeyMachine(os.environ.get("YAPPR_TEST_CHORD") or "ctrl+win")
         self.on_event = on_event
         self._events: queue.Queue[str | None] = queue.Queue()
         self._thread_id = 0
@@ -251,7 +251,7 @@ class KeyboardHook:
         try:
             if n_code == 0:
                 kb = ctypes.cast(l_param, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
-                if kb.dwExtraInfo != MURMUR_TAG:
+                if kb.dwExtraInfo != YAPPR_TAG:
                     if self._feed(kb.vkCode, w_param in (WM_KEYDOWN, WM_SYSKEYDOWN)):
                         return 1
         except Exception:  # never let an exception kill keyboard input
@@ -360,7 +360,7 @@ class HotkeyProcess:
         import sys
 
         self._p = subprocess.Popen(
-            [sys.executable, "-m", "murmur.hotkey_host"],
+            [sys.executable, "-m", "yappr.hotkey_host"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) | 0x00008000,  # ABOVE_NORMAL_PRIORITY_CLASS
             text=True, bufsize=1,

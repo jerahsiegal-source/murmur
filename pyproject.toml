@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "murmur-dictation"
+name = "yappr"
 version = "0.1.0"
 description = "Local-first hotkey dictation, meeting notes and read-aloud for Windows. Bring your own API key."
 readme = "README.md"
@@ -30,10 +30,13 @@ dependencies = [
 dev = ["pytest", "psutil"]
 
 [project.scripts]
-murmur = "murmur.app:main"
+yappr = "yappr.app:main"
 
 [tool.setuptools]
-packages = ["murmur"]
+packages = ["yappr", "yappr.assets"]
+
+[tool.setuptools.package-data]
+"yappr.assets" = ["*.ico", "*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

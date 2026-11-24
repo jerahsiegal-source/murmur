@@ -13,16 +13,16 @@ end = start + timedelta(minutes=60)
 fmt = "%Y%m%dT%H%M%SZ"
 open(out, "w", newline="\r\n").write(f"""BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Murmur test//EN
+PRODID:-//Yappr test//EN
 BEGIN:VEVENT
-UID:murmur-test-{start:%H%M%S}@local
+UID:yappr-test-{start:%H%M%S}@local
 DTSTAMP:{datetime.now(timezone.utc):{fmt}}
 DTSTART:{start:{fmt}}
 DTEND:{end:{fmt}}
 SUMMARY:{title}
 END:VEVENT
 BEGIN:VEVENT
-UID:murmur-allday@local
+UID:yappr-allday@local
 DTSTART;VALUE=DATE:{start:%Y%m%d}
 SUMMARY:All-day thing (should not prompt)
 END:VEVENT

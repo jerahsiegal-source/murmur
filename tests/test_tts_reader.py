@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-from murmur import tts
+from yappr import tts
 
 
 class FakeVoice:

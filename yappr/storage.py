@@ -19,7 +19,16 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 _lock = threading.Lock()
-MEETING_MARKER = ".murmur-meeting"  # only folders with this file are ever auto-deleted
+MEETING_MARKER = ".yappr-meeting"  # only folders with this file are ever auto-deleted
+LEGACY_MEETING_MARKER = ".murmur-meeting"  # written by Murmur, the app's old name
+
+
+def meeting_marker(d: Path) -> Path | None:
+    """The marker file that says Yappr (or Murmur) created this meeting folder, if any."""
+    for name in (MEETING_MARKER, LEGACY_MEETING_MARKER):
+        if (d / name).exists():
+            return d / name
+    return None
 
 
 def append_history(data_dir: Path, rec: dict) -> None:
@@ -84,8 +93,8 @@ def purge(data_dir: Path, meetings_dir: Path, retention_days: int, now: float | 
 
     if meetings_dir.exists():
         for d in meetings_dir.iterdir():
-            marker = d / MEETING_MARKER
-            if not (d.is_dir() and marker.exists()):
+            marker = meeting_marker(d) if d.is_dir() else None
+            if marker is None:
                 continue  # never touch folders we didn't create
             try:
                 created = datetime.fromisoformat(marker.read_text(encoding="utf-8").strip()).timestamp()

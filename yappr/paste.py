@@ -9,7 +9,7 @@ from ctypes import wintypes
 from typing import Callable
 
 from .hotkeys import (
-    MURMUR_TAG,
+    YAPPR_TAG,
     VK_LCONTROL,
     VK_LMENU,
     VK_LSHIFT,
@@ -77,7 +77,7 @@ _EXCLUDE_FMT = user32.RegisterClipboardFormatW("ExcludeClipboardContentFromMonit
 
 def _key_input(vk: int, up: bool) -> INPUT:
     i = INPUT(type=INPUT_KEYBOARD)
-    i.u.ki = KEYBDINPUT(wVk=vk, wScan=0, dwFlags=KEYEVENTF_KEYUP if up else 0, time=0, dwExtraInfo=MURMUR_TAG)
+    i.u.ki = KEYBDINPUT(wVk=vk, wScan=0, dwFlags=KEYEVENTF_KEYUP if up else 0, time=0, dwExtraInfo=YAPPR_TAG)
     return i
 
 
@@ -356,7 +356,7 @@ def copy_selection(press: Callable[[int], None] | None = None, timeout: float = 
                    insert_wait: float = 0.2) -> str | None:
     """Copy the highlighted text in the focused window and return it (None if nothing was highlighted).
 
-    `press(vk)` presses Ctrl+<vk> for the app; Murmur passes its hotkey helper, which knows which keys
+    `press(vk)` presses Ctrl+<vk> for the app; Yappr passes its hotkey helper, which knows which keys
     the user is physically holding and restores them afterwards. Ctrl+Insert is tried first because
     it only ever copies (Ctrl+C interrupts programs in terminals); Ctrl+C is the fallback outside
     terminals. The user's clipboard is put back afterwards, even if the app copies late.

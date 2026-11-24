@@ -1,4 +1,4 @@
-from murmur.speech_text import chunks, clean_for_speech, file_name, site_name, spoken_len
+from yappr.speech_text import chunks, clean_for_speech, file_name, site_name, spoken_len
 
 
 def c(s):
@@ -8,19 +8,19 @@ def c(s):
 def test_windows_paths_become_file_names():
     assert c(r"I wrote the brief to D:\home\alex\Documents\Projects\Voice-to-text\INTENT-read-aloud.md today.") == \
         "I wrote the brief to INTENT-read-aloud.md today."
-    assert c(r"See D:/home/me/repo/murmur/app.py:42 for details") == "See app.py for details."
-    assert c(r"Log is in \\server\share\logs\murmur.log") == "Log is in murmur.log."
+    assert c(r"See D:/home/me/repo/yappr/app.py:42 for details") == "See app.py for details."
+    assert c(r"Log is in \\server\share\logs\yappr.log") == "Log is in yappr.log."
 
 
 def test_quoted_paths_with_spaces():
     assert c(r"I found your old tool at `D:\home\alex\Text to speech tool`.") == \
         "I found your old tool at Text to speech tool."
-    assert c('Open "C:\\Program Files\\Murmur\\murmur.exe" now') == "Open murmur.exe now."
+    assert c('Open "C:\\Program Files\\Yappr\\yappr.exe" now') == "Open yappr.exe now."
 
 
 def test_unix_and_relative_paths():
     assert c("Edit /home/me/project/src/main.ts and ~/notes/todo.md") == "Edit main.ts and todo.md."
-    assert c("Changed murmur/app.py:136 and tests/test_hotkeys.py.") == "Changed app.py and test hotkeys.py."
+    assert c("Changed yappr/app.py:136 and tests/test_hotkeys.py.") == "Changed app.py and test hotkeys.py."
     assert c("It lives in ./tools/run_timed.ps1") == "It lives in run timed.ps1."
 
 
@@ -75,7 +75,7 @@ def test_arrows_emoji_and_snake_case():
 
 def test_file_name_helper():
     assert file_name("D:\\home\\me\\") == "me"
-    assert file_name("murmur/app.py:12:5") == "app.py"
+    assert file_name("yappr/app.py:12:5") == "app.py"
     assert file_name("C:\\") == "C drive"
 
 
@@ -83,7 +83,7 @@ def test_real_ai_reply():
     reply = (
         "I found your old tool at `D:\\home\\alex\\Text to speech tool`. It's an AutoHotkey script that uses "
         "Piper voices. I wrote the brief to [INTENT-read-aloud.md](INTENT-read-aloud.md). Your existing "
-        "[INTENT.md](INTENT.md) is the Murmur brief.\n\n"
+        "[INTENT.md](INTENT.md) is the Yappr brief.\n\n"
         "- **What you get:** highlight text, press Ctrl+Alt+X, and it starts reading within about 1 second.\n"
         "- **Old tool:** see D:\\home\\alex\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Read Aloud.lnk"
     )
@@ -102,7 +102,7 @@ def test_chunks_short_first_then_sentences():
 
 
 def test_chunks_cover_long_text_without_loss():
-    para = ("Murmur reads highlighted text aloud using a local voice, so nothing leaves your computer. " * 40).strip()
+    para = ("Yappr reads highlighted text aloud using a local voice, so nothing leaves your computer. " * 40).strip()
     cs = chunks(para)
     assert " ".join(x.text for x in cs) == para
     assert all(len(x.text) <= 150 for x in cs)

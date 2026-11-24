@@ -3,7 +3,7 @@ import json, sys, time, tkinter as tk
 
 out = sys.argv[1]
 root = tk.Tk()
-root.title("Murmur paste target")
+root.title("Yappr paste target")
 root.geometry("700x300+200+200")
 t = tk.Text(root, wrap="word", font=("Segoe UI", 11))
 t.pack(fill="both", expand=True)

@@ -1,6 +1,6 @@
 """Helper process: owns the keyboard hook and prints events to stdout, one per line.
 
-Reads commands from stdin ("reset", "copy <vk>"); exits when stdin closes (i.e. when Murmur exits).
+Reads commands from stdin ("reset", "copy <vk>"); exits when stdin closes (i.e. when Yappr exits).
 """
 import sys
 import threading

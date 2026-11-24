@@ -451,7 +451,7 @@ class MeetingSession:
                     log.exception("meeting chunk %d failed", i)
                     self.failed_chunks.append(i)
                     self._write_state(finished=False, chunks_done=i + 1)
-                    self._append([(i * self.chunk_s, "Note", f"_(this part could not be transcribed: {e}; its audio is kept and Murmur retries it next time it starts)_")])
+                    self._append([(i * self.chunk_s, "Note", f"_(this part could not be transcribed: {e}; its audio is kept and Yappr retries it next time it starts)_")])
             self._flush_carry()
             self.on_status("summarizing")
             try:
@@ -571,13 +571,13 @@ def summarize_folder(folder: Path, llm, settings, terms: list[str] | None = None
 
 def unfinished_meetings(meetings_dir: Path) -> list[Path]:
     """Meeting folders left mid-way (app closed/crashed during a call) or with leftover audio."""
-    from .storage import MEETING_MARKER
+    from .storage import meeting_marker
 
     out = []
     if not meetings_dir.exists():
         return out
     for d in sorted(meetings_dir.iterdir()):
-        if not (d / MEETING_MARKER).exists():
+        if not d.is_dir() or meeting_marker(d) is None:
             continue
         try:
             st = json.loads((d / "state.json").read_text(encoding="utf-8"))
@@ -642,7 +642,7 @@ def _recover_folder(d: Path, transcriber, llm, settings, entries: list) -> None:
         rows = merge_segments(tracks["mic"], tracks["sys"])
         with open(d / "transcript.md", "a", encoding="utf-8") as f:
             if first:
-                why = "Murmur was closed during the call" if crashed else "a transcription error; retried"
+                why = "Yappr was closed during the call" if crashed else "a transcription error; retried"
                 f.write(f"[{fmt_ts(i * chunk_s)}] **Note:** _(the part below was recovered after {why})_\n\n")
                 first = False
             for s, who, text in rows:

@@ -75,7 +75,7 @@ while len(turns) < need:
     i += 1
 turns += END
 
-tmp = tempfile.mkdtemp(prefix="murmur_meet_")
+tmp = tempfile.mkdtemp(prefix="yappr_meet_")
 jobs = [{"voice": "Microsoft David Desktop" if who == "me" else "Microsoft Zira Desktop", "text": txt,
          "out": os.path.join(tmp, f"{k:05d}.wav")} for k, (who, txt) in enumerate(turns)]
 jf = os.path.join(tmp, "jobs.json")

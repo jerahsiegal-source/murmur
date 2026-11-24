@@ -44,7 +44,7 @@ KEEPALIVE_S = 600  # tiny synthesis every 10 min while idle, so the model stays 
 def _wasapi_default_output():
     """WASAPI entry for Windows' current default speakers: ~0.1 s less latency than MME.
 
-    Returns (None, None) if it can't be matched (e.g. a headset plugged in after Murmur started
+    Returns (None, None) if it can't be matched (e.g. a headset plugged in after Yappr started
     isn't in PortAudio's device list yet); MME's sound mapper always follows the default device.
     """
     try:

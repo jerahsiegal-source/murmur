@@ -1,6 +1,6 @@
 import time
 
-from murmur.hotkeys import HotkeyMachine, VK_LCONTROL, VK_LWIN, VK_SPACE, VK_LMENU, VK_LSHIFT, VK_Z, HANDSFREE, IDLE
+from yappr.hotkeys import HotkeyMachine, VK_LCONTROL, VK_LWIN, VK_SPACE, VK_LMENU, VK_LSHIFT, VK_Z, HANDSFREE, IDLE
 
 D = 0x44  # 'D'
 
@@ -98,7 +98,7 @@ def test_bad_chord_rejected():
 
 
 # ---- read aloud: Ctrl+Alt+X / P / ] / [
-from murmur.hotkeys import VK_X, VK_P, VK_OEM_4, VK_OEM_6, VK_RMENU  # noqa: E402
+from yappr.hotkeys import VK_X, VK_P, VK_OEM_4, VK_OEM_6, VK_RMENU  # noqa: E402
 
 
 def test_ctrl_alt_x_reads_and_key_is_swallowed():
@@ -142,15 +142,15 @@ def test_altgr_characters_are_not_swallowed():
 
 
 def test_right_ctrl_right_alt_still_reads():
-    from murmur.hotkeys import VK_RCONTROL
+    from yappr.hotkeys import VK_RCONTROL
     m = HotkeyMachine()
     r = feed(m, [(VK_RCONTROL, 1, 0), (VK_RMENU, 1, 0), (VK_X, 1, 0.1), (VK_X, 0, 0.2)])
     assert events(r) == ["read"]
 
 
 # ---- copy while Ctrl+Alt are held: Alt must be pressed back down (else the next X is Ctrl+X = cut)
-import murmur.paste as paste_mod  # noqa: E402
-from murmur import hotkeys as hk  # noqa: E402
+import yappr.paste as paste_mod  # noqa: E402
+from yappr import hotkeys as hk  # noqa: E402
 
 
 def _hook_with(monkeypatch, held):
@@ -205,7 +205,7 @@ def test_copy_without_ctrl_held_presses_and_releases_ctrl(monkeypatch):
 
 
 def test_copy_while_holding_right_ctrl_never_leaves_left_ctrl_down(monkeypatch):
-    from murmur.hotkeys import VK_RCONTROL
+    from yappr.hotkeys import VK_RCONTROL
     h, sent = _hook_with(monkeypatch, [VK_RCONTROL, VK_LMENU])
     h.copy(0x2D)
     first = sent[0]

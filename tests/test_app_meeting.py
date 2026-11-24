@@ -3,8 +3,8 @@ import threading
 import time
 from types import SimpleNamespace
 
-from murmur import app as app_mod
-from murmur import meeting as meeting_mod
+from yappr import app as app_mod
+from yappr import meeting as meeting_mod
 
 
 class FakeSession:

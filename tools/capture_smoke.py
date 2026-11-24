@@ -9,9 +9,9 @@ import winsound
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from murmur.config import Store  # noqa: E402
-from murmur.meeting import MeetingSession  # noqa: E402
-from murmur.stt import Transcriber  # noqa: E402
+from yappr.config import Store  # noqa: E402
+from yappr.meeting import MeetingSession  # noqa: E402
+from yappr.stt import Transcriber  # noqa: E402
 
 wav, out = sys.argv[1], Path(sys.argv[2])
 store = Store()

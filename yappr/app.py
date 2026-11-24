@@ -1,4 +1,4 @@
-"""Murmur: hotkey dictation + meeting notes for Windows."""
+"""Yappr: hotkey dictation + meeting notes for Windows."""
 from __future__ import annotations
 
 import ctypes
@@ -17,7 +17,7 @@ from . import storage
 from .audio import MicRecorder
 from .calendar_watch import CalendarWatcher
 from .cleanup import Cleaner
-from .config import Store
+from .config import Store, getenv, migrate_from_murmur
 from .hotkeys import VK_MASK, HotkeyProcess
 from .llm import LLMClient, make_llm
 from .paste import copy_selection, paste_text, tap_key
@@ -26,24 +26,26 @@ from .stt import Transcriber
 from .tts import Reader, Voice, clamp_speed
 from .ui import Bar, MeetingPrompt
 
-log = logging.getLogger("murmur")
+log = logging.getLogger("yappr")
+ASSETS = Path(__file__).with_name("assets")
+APP_ID = "Yappr.Dictation"  # groups windows under the Yappr icon on the taskbar
 
 
 def setup_logging(data_dir: Path) -> None:
     logging.getLogger("phonemizer").setLevel(logging.ERROR)  # warns on every chunk, harmlessly
-    h = RotatingFileHandler(data_dir / "murmur.log", maxBytes=1_000_000, backupCount=2, encoding="utf-8")
+    h = RotatingFileHandler(data_dir / "yappr.log", maxBytes=1_000_000, backupCount=2, encoding="utf-8")
     h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     root.addHandler(h)
-    if sys.stderr and os.environ.get("MURMUR_DEBUG"):
+    if sys.stderr and getenv("YAPPR_DEBUG"):
         root.addHandler(logging.StreamHandler())
 
 
 def single_instance() -> bool:
     k32 = ctypes.WinDLL("kernel32", use_last_error=True)
     k32.CreateMutexW.restype = ctypes.c_void_p
-    single_instance._h = k32.CreateMutexW(None, False, "Local\\MurmurDictation")
+    single_instance._h = k32.CreateMutexW(None, False, "Local\\YapprDictation")
     return ctypes.get_last_error() != 183  # ERROR_ALREADY_EXISTS
 
 
@@ -108,7 +110,7 @@ class App:
         if not self.store.settings.show_bar:
             self.bar.win.withdraw()
         self.root.after(3000, self.voice.preload_async)  # after startup, so it never slows it down
-        log.info("Murmur started")
+        log.info("Yappr started")
 
     def quit(self) -> None:
         def finish():
@@ -406,16 +408,14 @@ class App:
     def _start_tray(self) -> None:
         try:
             import pystray
-            from PIL import Image, ImageDraw
+            from PIL import Image
         except Exception:
             log.warning("pystray unavailable; no tray icon")
             return
-        img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-        d = ImageDraw.Draw(img)
-        d.rounded_rectangle((4, 4, 60, 60), 16, fill=(24, 24, 27, 255))
-        for i, h in enumerate((10, 22, 34, 22, 10)):
-            x = 14 + i * 9
-            d.line((x, 32 - h / 2, x, 32 + h / 2), fill=(138, 180, 255, 255), width=5)
+        try:
+            img = Image.open(ASSETS / "yappr-64.png")
+        except Exception:  # missing asset: plain butter square so the tray still has something
+            img = Image.new("RGBA", (64, 64), (255, 233, 168, 255))
         M = pystray.MenuItem
         menu = pystray.Menu(
             M(lambda _: "Stop note-taker" if self.meeting else "Start note-taker", lambda: self.toggle_meeting()),
@@ -424,9 +424,9 @@ class App:
             M("Open meeting notes folder", self.open_meetings_folder),
             M("Settings…", lambda: self.bar.post(self.open_settings), default=True),
             pystray.Menu.SEPARATOR,
-            M("Quit Murmur", lambda: self.bar.post(self.quit)),
+            M("Quit Yappr", lambda: self.bar.post(self.quit)),
         )
-        self.tray = pystray.Icon("Murmur", img, "Murmur — hold Ctrl+Win to dictate · Ctrl+Alt+X reads aloud", menu)
+        self.tray = pystray.Icon("Yappr", img, "Yappr — hold Ctrl+Win to dictate · Ctrl+Alt+X reads aloud", menu)
         self.tray.run_detached()
 
     def open_meetings_folder(self) -> None:
@@ -448,13 +448,38 @@ def main() -> None:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
     except Exception:
         pass
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    except Exception:
+        pass
+    migrated: list[str] = []
+    if not getenv("YAPPR_DATA_DIR"):  # a custom data folder (tests, scripts) never pulls in Murmur's data
+        from .config import data_dir
+
+        try:
+            migrated = migrate_from_murmur(data_dir())
+        except Exception as e:
+            migrated = [f"migration failed: {e!r}"]
     store = Store()
     setup_logging(store.root)
+    if migrated:
+        log.info("carried over from Murmur: %s", "; ".join(migrated))
     if not single_instance():
         log.info("already running")
         return
+    try:
+        from .settings_ui import migrate_startup
+
+        if migrate_startup():
+            log.info("start-with-Windows entry moved from Murmur to Yappr")
+    except Exception:
+        log.exception("could not move the start-with-Windows entry")
     root = tk.Tk()
     root.withdraw()
+    try:
+        root.iconbitmap(default=str(ASSETS / "yappr.ico"))  # every window: settings, prompts
+    except Exception:
+        log.warning("window icon unavailable")
     app = App(root, store)
     app.start()
     root.mainloop()

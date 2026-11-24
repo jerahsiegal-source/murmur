@@ -1,7 +1,7 @@
 """Uses the real Windows clipboard; puts the user's clipboard back afterwards."""
 import pytest
 
-from murmur import paste
+from yappr import paste
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def keep_user_clipboard():
 def test_snapshot_restores_non_text_formats(keep_user_clipboard):
     import ctypes
 
-    fmt = paste.user32.RegisterClipboardFormatW("Murmur Test Binary")
+    fmt = paste.user32.RegisterClipboardFormatW("Yappr Test Binary")
     assert paste._open_clipboard()
     try:
         paste.user32.EmptyClipboard()
@@ -61,7 +61,7 @@ def test_password_manager_privacy_marker_survives(keep_user_clipboard):
 
 
 def test_snapshot_over_budget_still_keeps_text(keep_user_clipboard):
-    big = paste.user32.RegisterClipboardFormatW("Murmur Test Big")
+    big = paste.user32.RegisterClipboardFormatW("Yappr Test Big")
     _put([(paste.CF_UNICODETEXT, "keep me".encode("utf-16-le") + b"\0\0"), (big, b"x" * 2_000_000)])
     snap = dict(paste.snapshot_clipboard(budget_bytes=1_000_000))
     assert big not in snap
