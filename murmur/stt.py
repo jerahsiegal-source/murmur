@@ -145,8 +145,7 @@ class Transcriber:
 class background_priority:
     """Context manager: run heavy background work (meeting transcription) politely.
 
-    Lowers the process priority and turns on Windows "efficiency mode" (EcoQoS), which favours
-    efficiency cores and lower clocks, so the apps you're using in the meeting stay snappy.
+    Lowers the process priority, so the apps you're using during the meeting get the CPU first.
     The keyboard hook lives in a separate process, so hotkeys are unaffected.
     """
 
@@ -168,26 +167,21 @@ class background_priority:
 
 
 def _set_background(on: bool) -> None:
+    """Below-normal priority: other apps get the CPU first; when the PC is idle it costs nothing.
+
+    (Windows "efficiency mode" / EcoQoS was tried and removed: it pinned the work to slow cores and
+    made a 5-minute meeting chunk take ~58 s instead of ~8 s, so notes arrived minutes late.)
+    """
     try:
         import ctypes
         from ctypes import wintypes
-
-        class PPT(ctypes.Structure):  # PROCESS_POWER_THROTTLING_STATE
-            _fields_ = [("Version", wintypes.ULONG), ("ControlMask", wintypes.ULONG), ("StateMask", wintypes.ULONG)]
 
         k32 = ctypes.WinDLL("kernel32", use_last_error=True)
         k32.GetCurrentProcess.restype = wintypes.HANDLE
         k32.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
         k32.SetPriorityClass.restype = wintypes.BOOL
-        k32.SetProcessInformation.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
-        k32.SetProcessInformation.restype = wintypes.BOOL
-        h = k32.GetCurrentProcess()
         BELOW_NORMAL, NORMAL = 0x4000, 0x20
-        if not k32.SetPriorityClass(h, BELOW_NORMAL if on else NORMAL):
+        if not k32.SetPriorityClass(k32.GetCurrentProcess(), BELOW_NORMAL if on else NORMAL):
             log.warning("SetPriorityClass failed: %s", ctypes.get_last_error())
-        EXECUTION_SPEED = 0x1
-        st = PPT(1, EXECUTION_SPEED, EXECUTION_SPEED if on else 0)
-        if not k32.SetProcessInformation(h, 4, ctypes.byref(st), ctypes.sizeof(st)):  # ProcessPowerThrottling
-            log.info("EcoQoS not available: %s", ctypes.get_last_error())
     except Exception:
         log.warning("could not change process priority", exc_info=True)
