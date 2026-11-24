@@ -30,7 +30,8 @@ class FakeApp:
         self.meeting = None
         self.llm = None
         self.reloaded = 0
-        self.calendar = SimpleNamespace(next_event=lambda: None)
+        self.calendar = SimpleNamespace(next_event=lambda: None, refresh_now=lambda: None, last_error="")
+        self.google = SimpleNamespace(connected=False, configured=False, problem="")
 
     def reload_settings(self):
         self.reloaded += 1

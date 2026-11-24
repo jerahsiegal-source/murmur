@@ -3,7 +3,8 @@
 The window (yappr/window.py) runs in its own process, only while it is open, so the app itself stays
 small. Every read and write goes through `Api` in the app process, over a local named pipe
 (`serve`), so there is one owner of settings, keys and the dictionary. Nothing here touches the network
-except `test_connection`, which calls the AI service the user picked, exactly as Settings always did.
+except `test_connection`, which calls the AI service the user picked, exactly as Settings always did, and
+`google_connect`/`google_disconnect`, which talk to Google when the user clicks those buttons.
 """
 from __future__ import annotations
 
@@ -43,13 +44,19 @@ def _local(ts: str) -> datetime | None:
 
 
 def parse_summary(md: str) -> dict:
-    """summary.md -> {title, when, sections: [{heading, items: [{text, done?}] | paragraphs}]}."""
+    """summary.md -> {title, when, with?, call?, calendar?, sections: [{heading, items: [{text, done?}]}]}."""
     lines = md.splitlines()
     title = lines[0].lstrip("# ").strip() if lines and lines[0].startswith("#") else "Meeting"
-    when, sections, cur = "", [], None
+    when, sections, cur, extra = "", [], None, {}
     for line in lines[1:]:
         s = line.strip()
         if not s or s == "---" or s.startswith("Full transcript:"):
+            continue
+        m = re.match(r"\*\*(With|Call|Calendar):\*\*\s*(.*)", s)
+        if cur is None and m:  # the calendar details under the date (see meeting.event_block)
+            val = m.group(2)
+            link = re.match(r"\[.*?\]\((.*)\)", val)
+            extra[m.group(1).lower()] = link.group(1) if link else val
             continue
         if s.startswith("## "):
             cur = {"heading": s[3:].strip(), "items": []}
@@ -66,7 +73,7 @@ def parse_summary(md: str) -> dict:
             cur["items"].append({"text": m.group(2), "done": m.group(1).lower() == "x"})
         else:
             cur["items"].append({"text": re.sub(r"^[-*]\s+", "", s)})
-    return {"title": title, "when": when, "sections": sections}
+    return {"title": title, "when": when, "sections": sections, **extra}
 
 
 def plain_error(e: Exception) -> str:
@@ -92,6 +99,8 @@ class Api:
 
     def __init__(self, app):
         self.app = app
+        self._google_busy = False  # a Google sign-in is waiting in the browser
+        self._google_error = ""
 
     @property
     def store(self) -> Store:
@@ -120,7 +129,8 @@ class Api:
             "onboarded": self.store.onboarded(),
             "checklist_hidden": (self.store.root / ".checklist-hidden").exists(),
             "dictated_once": bool(storage.read_history(self.store.root, 1)),
-            "calendar_connected": bool(s.calendar_ics_url),
+            "calendar_connected": bool(s.calendar_ics_url) or self.app.google.connected,
+            "google": self.google_status(),
             "meeting_active": self.app.meeting is not None,
             "dictionary": self.store.dictionary,
             "bar_moved": len(s.bar_position) == 2,
@@ -219,9 +229,71 @@ class Api:
         os.startfile(p)
         return True
 
+    def open_link(self, url: str) -> bool:
+        """Opens a meeting's Google Calendar or Meet page in the browser. Nothing else."""
+        import urllib.parse
+        import webbrowser
+
+        u = urllib.parse.urlparse(str(url))
+        if u.scheme != "https" or u.hostname not in ("calendar.google.com", "www.google.com", "meet.google.com"):
+            return False
+        webbrowser.open(u.geturl())
+        return True
+
     def toggle_meeting(self) -> bool:
         self.app.toggle_meeting()
         return True
+
+    # ------------------------------------------------------------ Google
+
+    def google_status(self) -> dict:
+        g = self.app.google
+        connected = g.connected
+        return {
+            "available": g.configured,  # this copy of Yappr has a Google client ID
+            "connected": connected,
+            "email": self.store.settings.google_email if connected else "",
+            "busy": self._google_busy,
+            "error": self._google_error or (g.problem if connected else "") or
+                     (self.app.calendar.last_error if connected and getattr(self.app.calendar, "last_error", "") else ""),
+        }
+
+    def google_connect(self) -> dict:
+        """Opens Google's sign-in in the browser. Returns at once; the page polls google_status."""
+        if self._google_busy:
+            return self.google_status()
+        self._google_busy, self._google_error = True, ""
+
+        def run():
+            from .google_auth import GoogleError
+
+            try:
+                email = self.app.google.connect()
+                self.store.settings.google_email = email
+                self.store.save_settings()
+                self.app.calendar.refresh_now()
+            except GoogleError as e:
+                self._google_error = str(e)
+            except Exception:
+                log.exception("google connect failed")
+                self._google_error = "Couldn't connect to Google. Try again."
+            finally:
+                self._google_busy = False
+
+        threading.Thread(target=run, name="google-connect", daemon=True).start()
+        return self.google_status() | {"busy": True}
+
+    def google_cancel(self) -> dict:
+        self.app.google.cancel()
+        return self.google_status()
+
+    def google_disconnect(self) -> dict:
+        self.app.google.disconnect()
+        self.store.settings.google_email = ""
+        self.store.save_settings()
+        self._google_error = ""
+        self.app.calendar.refresh_now()
+        return self.google_status()
 
     # ------------------------------------------------------------ settings
     def save_settings(self, changes: dict) -> dict:

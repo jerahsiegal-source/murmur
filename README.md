@@ -100,7 +100,19 @@ The **AI cleanup** tab shows your real 30-day spend and a monthly projection fro
 
 ### Calendar prompt
 
-Google Calendar → Settings → your calendar → **Secret address in iCal format** → paste it into **Settings → Meetings → Calendar iCal address**. When a meeting is about to start, Yappr asks "Start notes?". It never records on its own. All-day and "free" events are ignored. Any calendar that offers an iCal/ICS link works.
+When a meeting is about to start, Yappr asks "Start notes?". It never records on its own. All-day and "free" events are ignored.
+
+**Google Calendar:** **Settings → Meetings → Connect Google Calendar**. Google's sign-in opens in your browser. Yappr asks only to read your calendar events and see your email address, and can never change your calendar. Once you're connected:
+
+- meetings you've declined don't trigger the prompt;
+- notes are named after the event, and `summary.md` lists who was invited, the Meet link and a link back to the event. Attendee *names* (never email addresses) go to the AI so it spells them right;
+- clicking **Notes** during a calendar meeting picks up that meeting's details too.
+
+**Disconnect** in the same place cancels Yappr's access at Google and deletes the saved sign-in. You can also remove it at [myaccount.google.com/connections](https://myaccount.google.com/connections).
+
+> Google sign-in needs a Google Cloud "client ID". Until Yappr ships with a reviewed one, set up your own (about 10 minutes, free): see [docs/google-setup.md](docs/google-setup.md).
+
+**Any other calendar (Outlook, iCloud…):** paste its private iCal/ICS link under **Settings → Meetings → Use another calendar instead**. For Google that's Settings → your calendar → **Secret address in iCal format**.
 
 ## Dictionary
 
@@ -115,9 +127,10 @@ Google Calendar → Settings → your calendar → **Secret address in iCal form
 | Meeting audio | inside the meeting folder while recording | deleted as soon as each piece is transcribed |
 | Dictation audio | memory only | never written to disk |
 | API key | Windows Credential Manager | until you remove it |
+| Google sign-in (if connected) | Windows Credential Manager (`Yappr / google-refresh-token`); your email address in `settings.json` | until you click Disconnect |
 | Text you read aloud | memory only (your clipboard is restored right after copying it) | never written to disk |
 
-Network use: only the AI endpoint you configure (text only), the calendar feed if you set one, and a one-time model download from Hugging Face.
+Network use: only the AI endpoint you configure (text only), your calendar (the iCal link, or Google Calendar at `oauth2.googleapis.com` and `www.googleapis.com` if you connected it), and a one-time model download from Hugging Face.
 
 ## Resource use (i7-12650H laptop)
 

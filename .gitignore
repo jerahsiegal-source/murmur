@@ -16,3 +16,6 @@ config.local.json
 dictionary.local.json
 .env
 models/
+# Google Cloud client files (the downloaded one is usually client_secret_*.json)
+google-client.json
+client_secret*.json
