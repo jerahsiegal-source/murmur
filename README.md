@@ -10,7 +10,8 @@ Local-first hotkey dictation, meeting notes and read-aloud for Windows. Bring yo
 
 A 50-second walkthrough: dictating into any app, having text read aloud, and adding your own AI key.
 
-<!-- Demo video goes here. On github.com, edit this file and drag video/out/yappr-demo.mp4 onto this line: GitHub uploads it and inserts a link that plays on the page. -->
+https://github.com/user-attachments/assets/71ffa7cf-e1b3-449f-89d5-8aa980b931bd
+
 
 Yappr does three things:
 
