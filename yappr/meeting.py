@@ -330,8 +330,9 @@ class MeetingSession:
 
     def __init__(self, meetings_dir: Path, title: str, transcriber, llm, settings,
                  on_status: Callable[[str], None] = lambda s: None, chunk_s: int = CHUNK_S,
-                 capture_factory=None, dictionary: Callable[[], list] = lambda: []):
+                 capture_factory=None, dictionary: Callable[[], list] = lambda: [], event: dict | None = None):
         self.title = title or "Meeting"
+        self.event = event_info(event)  # attendees + call link from the calendar, if it came from one
         self.dir = new_meeting_dir(meetings_dir, self.title)
         self.audio_dir = self.dir / "audio"
         self.audio_dir.mkdir()
@@ -414,6 +415,8 @@ class MeetingSession:
         # failed_chunks is saved on every write: recovery must never treat a failed piece as done
         st = {"title": self.title, "started": self.started.isoformat(timespec="seconds"), "chunk_s": self.chunk_s,
               "failed_chunks": list(self.failed_chunks), **kw}
+        if self.event:
+            st["event"] = self.event
         (self.dir / "state.json").write_text(json.dumps(st), encoding="utf-8")
 
     def _monitor(self) -> None:
@@ -582,12 +585,42 @@ class MeetingSession:
             pass
 
 
+def event_info(ev: dict | None) -> dict:
+    """What a meeting folder keeps from its calendar event: attendees and the call link (no times or ids)."""
+    if not ev:
+        return {}
+    people = [{"name": str(a.get("name", "")), "email": str(a.get("email", ""))}
+              for a in ev.get("attendees", []) if not a.get("me")]
+    return {k: v for k, v in (("attendees", people), ("meet_link", str(ev.get("meet_link", ""))),
+                              ("calendar_link", str(ev.get("html_link", "")))) if v}
+
+
+def event_block(info: dict) -> str:
+    """The lines under the date in summary.md: who was invited and the call link."""
+    lines = []
+    names = [a.get("name") or a.get("email") for a in info.get("attendees", []) if a.get("name") or a.get("email")]
+    if names:
+        lines.append("**With:** " + ", ".join(names))
+    if info.get("meet_link"):
+        lines.append(f"**Call:** {info['meet_link']}")
+    if info.get("calendar_link"):
+        lines.append(f"**Calendar:** [open the event]({info['calendar_link']})")
+    return "".join(l + "\n\n" for l in lines)
+
+
 def summarize_folder(folder: Path, llm, settings, terms: list[str] | None = None) -> Path:
     transcript = (folder / "transcript.md").read_text(encoding="utf-8")
     lines = [l for l in transcript.splitlines() if l.startswith("[")]
     out = folder / "summary.md"
     header = transcript.split("\n\n", 2)
-    head = "\n\n".join(header[:2]) + "\n\n"
+    try:
+        info = json.loads((folder / "state.json").read_text(encoding="utf-8")).get("event") or {}
+    except Exception:
+        info = {}
+    head = "\n\n".join(header[:2]) + "\n\n" + event_block(info)
+    # attendee names help the AI spell people right; their email addresses never go to the AI
+    names = [a["name"] for a in info.get("attendees", []) if a.get("name")]
+    terms = list(dict.fromkeys((terms or []) + names))
     if not lines:
         out.write_text(head + "_No speech was captured._\n", encoding="utf-8")
         return out

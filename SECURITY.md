@@ -26,6 +26,19 @@ Credential Manager is tied to your Windows account. Any program running as you c
 
 If you think a key has leaked, **revoke it in your provider's console** and create a new one. Deleting it from a file or from git history does not make a leaked key safe again.
 
+## Google Calendar sign-in
+
+Only if you click **Connect Google Calendar**. Code: `yappr/google_auth.py`.
+
+- **What Yappr can do:** read your calendar events (`calendar.events.readonly`) and see your email address (`openid email`). It can't change your calendar, and can't see your mail, Drive or anything else.
+- **How you sign in:** in your normal browser, on Google's own page, never inside the Yappr window. Google sends the browser back to `http://127.0.0.1:<random port>` on your own PC. A random `state` value and PKCE make sure only the Yappr that started the sign-in can finish it.
+- **Where it's stored:** the long-lived sign-in (the "refresh token") goes to Windows Credential Manager as `Yappr / google-refresh-token`. Short-lived access tokens stay in memory. Neither is written to `settings.json`, the log or anywhere else. `settings.json` holds only your email address, so Settings can show who's connected.
+- **Where it's sent:** only to `oauth2.googleapis.com` (sign-in) and `www.googleapis.com` (Calendar). Redirects are refused.
+- **What leaves your PC because of it:** nothing new goes to Google. From the events, attendee *names* go to your AI service with the meeting transcript so it spells them right. Email addresses never do.
+- **Turning it off:** **Disconnect** cancels the access at Google and deletes the token. You can also remove Yappr at [myaccount.google.com/connections](https://myaccount.google.com/connections). That works even if Yappr is gone.
+
+The "client ID" in `google-client.json` identifies the app to Google, not you. Google says the "client secret" in a desktop app's client file isn't a real secret. The same Credential Manager caveats as for the API key apply to the Google token (see below).
+
 ## Forks and downloads
 
 Yappr is open source, so anyone can publish a modified copy. A modified copy can send your key anywhere, and no app can prevent that. Install from the official repository, or read the changes before you trust a fork with a key. The key handling is all in `yappr/config.py` (storage) and `yappr/llm.py` (sending).

@@ -17,6 +17,7 @@ from . import storage
 from .api import Api, Server
 from .audio import MicRecorder
 from .calendar_watch import CalendarWatcher
+from .google_auth import GoogleAccount
 from .cleanup import Cleaner
 from .config import Store, getenv, migrate_from_murmur
 from .hotkeys import VK_MASK, HotkeyProcess
@@ -81,8 +82,9 @@ class App:
         self.meeting_lock = threading.Lock()
         self.meeting_busy = False  # a start/stop is in progress
         self.prompts: list = []
+        self.google = GoogleAccount(self.data)  # read-only Google Calendar, once the user clicks Connect
         self.calendar = CalendarWatcher(lambda: self.store.settings.calendar_ics_url, self._calendar_prompt,
-                                        lambda: self.store.settings.calendar_prompt_min_before)
+                                        lambda: self.store.settings.calendar_prompt_min_before, google=self.google)
         self.voice = Voice(self.data)
         self.reader = Reader(self.voice, lambda: self.store.settings.read_voice,
                              lambda: self.store.settings.read_speed,
@@ -338,11 +340,11 @@ class App:
         """Bar / tray button: start if idle, stop if recording."""
         threading.Thread(target=self._meeting_action, args=("toggle", title), daemon=True).start()
 
-    def start_meeting(self, title: str = "") -> None:
+    def start_meeting(self, title: str = "", event: dict | None = None) -> None:
         """Calendar prompt: only ever starts (never stops a recording that is already running)."""
-        threading.Thread(target=self._meeting_action, args=("start", title), daemon=True).start()
+        threading.Thread(target=self._meeting_action, args=("start", title, event), daemon=True).start()
 
-    def _meeting_action(self, action: str, title: str) -> None:
+    def _meeting_action(self, action: str, title: str, event: dict | None = None) -> None:
         from .meeting import MeetingSession
 
         with self.meeting_lock:  # one start/stop at a time; double-clicks can't create two sessions
@@ -364,6 +366,9 @@ class App:
                 self.bar.toast("Finishing your notes…", 4)
                 return
             s = self.store.settings
+            if event is None and not title and getattr(self, "calendar", None) is not None:
+                event = self.calendar.current_event()  # "Take notes" during a calendar meeting: use its details
+                title = event["title"] if event else ""
             try:
                 fake = getenv("YAPPR_FAKE_MEETING")  # end-to-end tests: a recorded call instead of the devices
                 factory = None
@@ -374,7 +379,7 @@ class App:
                     factory = lambda mic, sys_: FileCapture(mic, sys_, Path(fake), speed)  # noqa: E731
                 m = MeetingSession(Path(s.meetings_dir), title or "Meeting", self.transcriber, self.llm, s,
                                    on_status=self._meeting_status, dictionary=lambda: self.store.dictionary,
-                                   capture_factory=factory)
+                                   capture_factory=factory, event=event)
                 m.start()
             except Exception:
                 log.exception("meeting start failed")
@@ -421,7 +426,7 @@ class App:
 
         def show():
             self.prompts = [p for p in self.prompts if p.alive()]
-            self.prompts.append(MeetingPrompt(self.root, ev["title"], lambda: self.start_meeting(ev["title"])))
+            self.prompts.append(MeetingPrompt(self.root, ev["title"], lambda: self.start_meeting(ev["title"], ev)))
 
         self.bar.post(show)
 

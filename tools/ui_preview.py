@@ -21,7 +21,7 @@ EDGE = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
 
 SUMMARY = {
     "id": "2026-11-24 1000 Q4 planning", "title": "Q4 planning", "when": "Tuesday, November 24, 2026 at 10:00",
-    "has_transcript": True,
+    "has_transcript": True, "with": "Sam Ortiz, Priya Nair", "calendar": "https://www.google.com/calendar/event?eid=example",
     "sections": [
         {"heading": "Summary", "items": [{"text": "The team agreed to ship the beta on 12 December and hold pricing until January."},
                                          {"text": "Design needs two more weeks for onboarding screens."},
@@ -40,6 +40,7 @@ SCENARIOS = {
     "setup": dict(onboarded=True, dictated=True, key=False, cal=False, timeline=True, next=False),
     "full": dict(onboarded=True, dictated=True, key=True, cal=True, timeline=True, next=True),
     "empty": dict(onboarded=True, dictated=True, key=True, cal=True, timeline=False, next=False),
+    "google": dict(onboarded=True, dictated=True, key=True, cal=False, gconn=True, timeline=True, next=True),
 }
 
 
@@ -59,7 +60,8 @@ const st = {
   has_key: {claude: SC.key, openai:false},
   voices: {af_heart:"Heart (US, female)", am_michael:"Michael (US, male)", bf_emma:"Emma (UK, female)"},
   start_with_windows: true, onboarded: SC.onboarded, checklist_hidden:false, dictated_once: SC.dictated,
-  calendar_connected: SC.cal, meeting_active:false,
+  calendar_connected: SC.cal || !!SC.gconn, meeting_active:false,
+  google: {available:true, connected: !!SC.gconn, email: SC.gconn ? "you@example.com" : "", busy:false, error:""},
   dictionary: [{word:"Kiyosaki", sounds_like:["key a saki"]},{word:"Northwind", sounds_like:[]},{word:"Priya", sounds_like:["preeya"]}],
 };
 const tl = SC.timeline ? [
@@ -82,6 +84,7 @@ const M = {
   microphones: () => ["Microphone (USB Audio), MME", "Headset (Jabra), MME"],
   usage: () => ({calls: 212, usd: 0.0431, projected_month_usd: 0.06}),
   last_dictation: () => null,
+  google_status: () => st.google,
 };
 window.pywebview = {api: {call: async (m, a) => (M[m] ? M[m](...(a||[])) : true), browse_folder: async () => null}};
 window.__WELCOME = %d; window.__SECTION = %s;
@@ -100,6 +103,7 @@ SHOTS = [  # name, start page, scenario, welcome step, settings section, height
     ("notes-empty", "notes", "empty", 0, "", 700),
     ("words", "words", "full", 0, "", 700),
     ("settings", "settings", "setup", 0, "", 2600),
+    ("settings-google", "settings", "google", 0, "", 2600),
 ]
 
 

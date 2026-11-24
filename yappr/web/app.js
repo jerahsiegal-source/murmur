@@ -43,6 +43,7 @@ function groupByDay(items) {
 
 async function go(page, arg) {
   current = page;
+  clearInterval(gTimer);
   document.querySelectorAll(".nav").forEach((n) => n.setAttribute("aria-current", n.dataset.page === page ? "page" : "false"));
   const main = $("#main");
   try {
@@ -149,9 +150,10 @@ async function showNote(list) {
         : s.items.map((i) => `<p class="muted">${esc(i.text)}</p>`).join("");
       return (s.heading ? `<h2>${esc(s.heading)}</h2>` : "") + body;
     }).join("");
-    r.innerHTML = `<article><div class="meta">${esc(m.when)}</div><h1>${esc(m.title)}</h1>${sec}
+    r.innerHTML = `<article><div class="meta">${esc(m.when)}</div><h1>${esc(m.title)}</h1>${m.with ? `<p class="muted">With ${esc(m.with)}</p>` : ""}${sec}
       ${m.has_transcript ? `<details class="more" id="tr"><summary>Full transcript</summary><pre>Loading…</pre></details>` : ""}
-      <div class="actions"><button class="btn" id="resum">Write the summary again</button><button class="btn" id="openf">Open folder</button></div></article>`;
+      <div class="actions"><button class="btn" id="resum">Write the summary again</button><button class="btn" id="openf">Open folder</button>${m.calendar ? `<button class="btn" id="opencal">Open in Google Calendar</button>` : ""}</div></article>`;
+    if (m.calendar) $("#opencal").onclick = () => api("open_link", m.calendar);
     const tr = $("#tr");
     if (tr) tr.addEventListener("toggle", async () => { if (tr.open) tr.querySelector("pre").textContent = (await api("transcript", m.id)) || "No transcript."; }, { once: true });
     $("#resum").onclick = async (e) => {
@@ -251,7 +253,10 @@ async function pageSettings(main, section) {
 
     <section class="sgroup" id="s-meetings"><h2>Meetings</h2>
       ${row("Notes folder", "Where meeting notes are saved, as plain files you can open, search and back up. Tip: a folder inside Google Drive backs them up automatically.", `<input class="field" data-k="meetings_dir" value="${esc(s.meetings_dir)}" aria-label="Notes folder"><button class="btn" id="browse">Browse…</button>`)}
-      ${row("Calendar link", "Lets Yappr offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”. Yappr only reads it.", `<input class="field" type="password" data-k="calendar_ics_url" value="${esc(s.calendar_ics_url)}" placeholder="Paste the link" aria-label="Calendar link">`)}
+      ${st.google.available ? row("Google Calendar", GOOGLE_DESC, "", "grow") : ""}
+      ${st.google.available
+        ? `<details class="adv"${s.calendar_ics_url && !st.google.connected ? " open" : ""}><summary>Use another calendar instead (Outlook, iCloud…)</summary>${row("Calendar link", "Any calendar's private iCal link. Yappr only reads it. Not used while Google Calendar is connected.", `<input class="field" type="password" data-k="calendar_ics_url" value="${esc(s.calendar_ics_url)}" placeholder="Paste the link" aria-label="Calendar link">`)}</details>`
+        : row("Calendar link", "Lets Yappr offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”. Yappr only reads it.", `<input class="field" type="password" data-k="calendar_ics_url" value="${esc(s.calendar_ics_url)}" placeholder="Paste the link" aria-label="Calendar link">`)}
       ${row("Ask me", "How many minutes before a meeting starts to offer to take notes.", `<input class="field num" type="number" min="0" step="1" data-k="calendar_prompt_min_before" value="${esc(s.calendar_prompt_min_before)}" aria-label="Minutes before a meeting"><span class="muted small">min before</span>`)}
       ${row("Keep notes and dictations for", "Older ones are deleted automatically. At least 1 day.", `<input class="field num" type="number" min="1" step="1" data-k="retention_days" value="${esc(s.retention_days)}" aria-label="Days to keep"><span class="muted small">days</span>`)}
     </section>
@@ -334,7 +339,44 @@ async function pageSettings(main, section) {
   const br = $("#barreset");
   if (br) br.onclick = async () => { await api("reset_bar_position"); toast("Bar moved back"); go("settings", "general"); };
   $("#rewelcome").onclick = () => showWelcome(1);
+  if (st.google.available) wireGoogle($("#grow"), st.google);
   if (section) { const el = $("#s-" + section); if (el) el.scrollIntoView(); }
+}
+
+// ------------------------------------------------------------------ Google Calendar
+const GOOGLE_DESC = "Yappr offers to take notes when a meeting starts, and adds who's in it and the call link to your notes. Sign-in happens in your browser. Yappr can only read your calendar, never change it.";
+let gTimer = 0;
+
+function googleControl(g) {
+  if (g.connected) return `<span class="status ok">✓ Connected${g.email ? ` as ${esc(g.email)}` : ""}</span><button class="btn" data-g="off">Disconnect</button>`;
+  if (g.busy) return `<span class="status">Finish signing in in your browser…</span><button class="link" data-g="cancel">Cancel</button>`;
+  return `<button class="btn primary" data-g="on">Connect Google Calendar</button>`;
+}
+
+function wireGoogle(rowEl, g) {
+  const paint = (g) => {
+    if (!rowEl.isConnected) return;
+    rowEl.querySelector(".c").innerHTML = googleControl(g);
+    rowEl.querySelector(".msg").innerHTML = g.error ? `<span class="status bad">! ${esc(g.error)}</span>` : "";
+    rowEl.querySelectorAll("[data-g]").forEach((b) => (b.onclick = () => act(b.dataset.g, b)));
+    clearInterval(gTimer);
+    if (g.busy) {
+      gTimer = setInterval(async () => {
+        const n = await api("google_status");
+        if (n.busy) return;
+        paint(n);
+        if (n.connected) toast("Google Calendar connected");
+      }, 1000);
+    }
+  };
+  const act = async (what, b) => {
+    if (what === "off" && !confirm("Disconnect Google Calendar? Yappr will stop seeing your meetings, and Google will forget it gave Yappr access.")) return;
+    b.disabled = true;
+    const n = await api(what === "on" ? "google_connect" : what === "off" ? "google_disconnect" : "google_cancel");
+    paint(n);
+    if (what === "off") toast("Google Calendar disconnected");
+  };
+  paint(g);
 }
 
 // ------------------------------------------------------------------ Welcome (first run)
@@ -408,10 +450,12 @@ async function showWelcome(step = 1) {
       ${steps(3)}
       <h1>Meeting notes, when you want them</h1>
       <p>Click <b>Notes</b> on the bar at the bottom of your screen when a call starts. Yappr records your mic and the call on this PC, and writes a summary with next steps when it ends.</p>
-      <div style="margin-top:18px">${row("Calendar link (optional)", "Yappr can offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”.", `<input class="field" type="password" id="wcal" placeholder="Paste the link" aria-label="Calendar link">`, "wcalrow")}</div>
+      <div style="margin-top:18px">${S.google.available ? row("Google Calendar (optional)", GOOGLE_DESC, "", "wgrow") : ""}${S.google.available ? "" : row("Calendar link (optional)", "Yappr can offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”.", `<input class="field" type="password" id="wcal" placeholder="Paste the link" aria-label="Calendar link">`, "wcalrow")}</div>
       <div class="wfoot"><span class="small muted">Highlight any text and press Ctrl+Alt+X to hear it read aloud.</span><button class="btn primary" id="done">Start using Yappr</button></div></div>`;
+    if (S.google.available) wireGoogle($("#wgrow"), S.google);
     $("#done").onclick = async () => {
-      const cal = $("#wcal").value.trim();
+      clearInterval(gTimer);
+      const cal = $("#wcal") ? $("#wcal").value.trim() : "";
       if (cal) await api("save_settings", { calendar_ics_url: cal });
       await api("finish_onboarding");
       hideWelcome();

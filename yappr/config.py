@@ -151,6 +151,7 @@ class Settings:
     # Calendar
     calendar_ics_url: str = ""
     calendar_prompt_min_before: float = 1.0
+    google_email: str = ""  # the connected Google account, shown in Settings (the sign-in itself is in Credential Manager)
 
     # Read aloud (local Kokoro voice)
     read_voice: str = "af_heart"

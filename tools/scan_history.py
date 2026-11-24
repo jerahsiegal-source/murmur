@@ -19,11 +19,13 @@ PATTERNS = {
     "Slack token": r"xox[abpr]-[A-Za-z0-9\-]{10,}",
     "Bearer token literal": r"Bearer [A-Za-z0-9_\-\.]{20,}",
     "private key": r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+    "Google OAuth refresh token": r"1//0[0-9A-Za-z_\-]{30,}",
+    "Google OAuth client secret": r"GOCSPX-[0-9A-Za-z_\-]{20,}",
     "Google iCal secret URL": r"calendar\.google\.com/calendar/ical/[^\s\"']+/private-[0-9a-f]+",
     "email address": r"[A-Za-z0-9._%+\-]+@(?!anthropic\.com|local\b|example\.com)[A-Za-z0-9.\-]+\.[A-Za-z]{2,}",
     "Windows user path": r"[Cc]:[\/]+Users[\/]+(?!<|\{)[A-Za-z0-9_.\-]+",
 }
-BAD_FILES = re.compile(r"\.(wav|flac|mp3|ogg|m4a)$|(^|/)(history\.jsonl|usage\.jsonl|dictionary\.json|settings\.json|transcript\.md|summary\.md|\.env)$|(^|/)data/")
+BAD_FILES = re.compile(r"\.(wav|flac|mp3|ogg|m4a)$|(^|/)(history\.jsonl|usage\.jsonl|dictionary\.json|settings\.json|transcript\.md|summary\.md|\.env|google-client\.json|client_secret[^/]*\.json)$|(^|/)data/")
 
 
 def git(*args: str) -> subprocess.CompletedProcess:
