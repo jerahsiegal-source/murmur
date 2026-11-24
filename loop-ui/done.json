@@ -13,18 +13,18 @@
   "item": "Every visible surface uses the chosen design: pill, tray icon and menu, Settings (all of AI cleanup, Dictionary, Meetings, History, General), meeting prompt, notes/history views, read-aloud UI, installer and first launch.",
   "check": "before and after screenshots of every surface, in light and dark mode, signed off by the owner",
   "kind": "user-facing",
-  "status": "pending",
-  "attempts": 0,
-  "evidence": ""
+  "status": "blocked",
+  "attempts": 1,
+  "evidence": "Captures ready for owner sign-off in loop-ui/review.html (before/after: bar states, meeting prompt, every window page light+dark, live first run, Notes, My words, Settings, bar drag/menu/hide, read-aloud bar messages; tray menu + installer described in text). Waiting on: owner sign-off, and the owner's call on the font (DESIGN.md says Atkinson Hyperlegible bundled; build uses Segoe UI Variable because bundling means downloading font files)."
  },
  {
   "id": "D3",
   "item": "First-run setup exists. On a fresh install, a new person is guided to do their first dictation (Ctrl+Win) and, if they want, add an AI key. Both take about 2 minutes, guided only by the app.",
   "check": "a timed walkthrough on a clean profile in the real app, with screenshots",
   "kind": "user-facing",
-  "status": "pass",
+  "status": "blocked",
   "attempts": 1,
-  "evidence": "Real app, brand-new profile (tools/e2e_first_run.py): welcome opens by itself 0.6 s after start (log) and is ready ~3.3 s after launch; first dictation (6 s talk, Ctrl+Shift test chord) lands in the practice box with the success line, ready 0.38 s after release; AI helper added inside the welcome via a local fake OpenAI-compatible service -> 'Connected. Key saved.'; welcome done -> Today checklist 2 of 3; next dictation method=llm. Screens: loop-ui/shots/first-run-1..6.png, live-welcome*.png. Script wall time is inflated by the harness's process scan; owner repeats by hand with a real Claude key (staging checklist)."
+  "evidence": "Scripted walkthrough on a brand-new profile in the real app passes (tools/e2e_first_run.py; screens loop-ui/shots/first-run-1..6.png): welcome opens 0.6 s after start, first dictation lands in the practice box (0.38 s after release), AI helper added inside the welcome, Today checklist 2/3, next dictation tidied by AI. Waiting on: the owner's timed run by hand with Ctrl+Win and a real Claude key, since 'about 2 minutes, guided only by the app' needs a person (reviewer F4)."
  },
  {
   "id": "D4",
@@ -40,9 +40,9 @@
   "item": "End-to-end: fresh install -> first run -> dictation pastes -> a meeting is recorded and its notes are shown -> read-aloud works, all in the redesigned UI.",
   "check": "a run in the real app, with screenshots",
   "kind": "user-facing",
-  "status": "pass",
+  "status": "blocked",
   "attempts": 1,
-  "evidence": "tools/e2e_first_run.py --full on a brand-new profile in the real app: welcome -> first dictation in practice box -> AI helper (local fake service) -> Today; dictation pasted into another app (e2e_dictation: latency 0.31 s, text correct); meeting started from Today, recorded call (meet3, 289 s at 10x via YAPPR_FAKE_MEETING) -> bar 'Taking notes' -> Stop notes -> summary.md written (39 transcript lines) -> shown in Notes; read-aloud in Notepad: first sound 0.82 s, no gaps, stop silent, clipboard restored (long text run). Screens: loop-ui/shots/first-run-1..9.png."
+  "evidence": "From a brand-new profile everything passes in the real app (tools/e2e_first_run.py --full): first run, dictation pasted into another app (0.31 s), meeting recorded from Today and its notes shown in Notes, read-aloud (first sound 0.82 s, stop silent). Waiting on: the 'fresh install' part, i.e. install.ps1 on a clean machine (not run here: it would reinstall into the owner's environment and download ~750 MB) (reviewer F3)."
  },
  {
   "id": "D6",
@@ -51,7 +51,7 @@
   "kind": "regression",
   "status": "pass",
   "attempts": 1,
-  "evidence": "pytest 142 passed (121 before + 21 new). e2e on new code (fake mic, Ctrl+Shift chord): hold paste OK; hands-free paste OK; Alt+Shift+Z re-paste OK, no literal Z; back-to-back 2/2 pasted + non-text clipboard restored (same as base: 2/2, restored; the script's 'Priya' counter matches no current clip, so judged by the sentence appearing twice); read-aloud first sound 0.82 s, no gaps, stop silent, clipboard restored; meeting record -> notes (D5); dictionary via My words + tests; history in Notes -> Dictations. One cancelled run traced to a key press during the hold ('hotkey cancel', same handling as base)."
+  "evidence": "pytest 142 passed (121 before + 21 new). e2e on new code (fake mic, Ctrl+Shift chord): hold paste OK; hands-free paste OK; Alt+Shift+Z re-paste OK, no literal Z; back-to-back 2/2 pasted + non-text clipboard restored (same as base: 2/2, restored; the script's 'Priya' counter matches no current clip, so judged by the sentence appearing twice); read-aloud first sound 0.82 s, no gaps, stop silent, clipboard restored; meeting record -> notes (D5); dictionary via My words + tests; history in Notes -> Dictations. One cancelled run traced to a key press during the hold ('hotkey cancel', same handling as base). After review: e2e_back_to_back.py takes the clip's word as an argument (default unchanged); with names.wav + 'invoice': 1/2 on the first try (log: 'hotkey cancel' 24 ms after start, a stray key), then 2/2 and 2/2."
  },
  {
   "id": "D7",

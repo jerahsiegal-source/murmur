@@ -244,7 +244,7 @@ async function pageSettings(main, section) {
         ${claude ? "" : row("Service address", "The web address from your AI service's instructions, for example https://api.openai.com/v1. It must start with https:// (http:// is only allowed for one running on this PC).", `<input class="field" data-k="llm_base_url" value="${esc(s.llm_base_url)}" aria-label="Service address">`)}
         ${row("Model", "Which version of the AI to use. The default is fast and cheap.", `<input class="field" data-k="llm_model" value="${esc(s.llm_model)}" aria-label="Model">`)}
         ${row("Model for meeting summaries", "Leave blank to use the same model.", `<input class="field" data-k="llm_summary_model" value="${esc(s.llm_summary_model)}" placeholder="Same as above" aria-label="Model for meeting summaries">`)}
-        ${row("Prices, for the cost estimate", "US dollars per million tokens sent / received. A token is about ¾ of a word. Only used for the estimate below.", `<input class="field num" type="number" step="0.01" min="0" data-k="price_in_per_m" value="${s.price_in_per_m}" aria-label="Price per million tokens sent"><input class="field num" type="number" step="0.01" min="0" data-k="price_out_per_m" value="${s.price_out_per_m}" aria-label="Price per million tokens received">`)}
+        ${row("Prices, for the cost estimate", "US dollars per million tokens sent / received. A token is about ¾ of a word. Only used for the estimate below.", `<input class="field num" type="number" step="0.01" min="0" data-k="price_in_per_m" value="${esc(s.price_in_per_m)}" aria-label="Price per million tokens sent"><input class="field num" type="number" step="0.01" min="0" data-k="price_out_per_m" value="${esc(s.price_out_per_m)}" aria-label="Price per million tokens received">`)}
         ${row("What it's cost", `Last 30 days: ${usage.calls} request${usage.calls === 1 ? "" : "s"}, $${usage.usd.toFixed(4)}. At this rate, about $${usage.projected_month_usd.toFixed(2)} a month.`, "")}
       </details>
     </section>
@@ -252,14 +252,14 @@ async function pageSettings(main, section) {
     <section class="sgroup" id="s-meetings"><h2>Meetings</h2>
       ${row("Notes folder", "Where meeting notes are saved, as plain files you can open, search and back up. Tip: a folder inside Google Drive backs them up automatically.", `<input class="field" data-k="meetings_dir" value="${esc(s.meetings_dir)}" aria-label="Notes folder"><button class="btn" id="browse">Browse…</button>`)}
       ${row("Calendar link", "Lets Yappr offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”. Yappr only reads it.", `<input class="field" type="password" data-k="calendar_ics_url" value="${esc(s.calendar_ics_url)}" placeholder="Paste the link" aria-label="Calendar link">`)}
-      ${row("Ask me", "How many minutes before a meeting starts to offer to take notes.", `<input class="field num" type="number" min="0" step="1" data-k="calendar_prompt_min_before" value="${s.calendar_prompt_min_before}" aria-label="Minutes before a meeting"><span class="muted small">min before</span>`)}
-      ${row("Keep notes and dictations for", "Older ones are deleted automatically. At least 1 day.", `<input class="field num" type="number" min="1" step="1" data-k="retention_days" value="${s.retention_days}" aria-label="Days to keep"><span class="muted small">days</span>`)}
+      ${row("Ask me", "How many minutes before a meeting starts to offer to take notes.", `<input class="field num" type="number" min="0" step="1" data-k="calendar_prompt_min_before" value="${esc(s.calendar_prompt_min_before)}" aria-label="Minutes before a meeting"><span class="muted small">min before</span>`)}
+      ${row("Keep notes and dictations for", "Older ones are deleted automatically. At least 1 day.", `<input class="field num" type="number" min="1" step="1" data-k="retention_days" value="${esc(s.retention_days)}" aria-label="Days to keep"><span class="muted small">days</span>`)}
     </section>
 
     <section class="sgroup" id="s-read"><h2>Read aloud</h2>
       <p class="muted" style="margin:-4px 0 12px">Highlight text anywhere and press <span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">X</span>. The voice runs on this PC, so it's free and what you highlight never leaves it.</p>
       ${row("Voice", "", `<select class="field" data-k="read_voice" aria-label="Voice">${Object.entries(st.voices).map(([k, v]) => opt(k, v, s.read_voice)).join("")}</select>`)}
-      ${row("Speed", "Also: Ctrl+Alt+] faster, Ctrl+Alt+[ slower.", `<input type="range" class="range" min="0.7" max="2" step="0.1" data-k="read_speed" value="${s.read_speed}" aria-label="Speed"><b id="spd">${Number(s.read_speed).toFixed(1)}×</b>`)}
+      ${row("Speed", "Also: Ctrl+Alt+] faster, Ctrl+Alt+[ slower.", `<input type="range" class="range" min="0.7" max="2" step="0.1" data-k="read_speed" value="${esc(s.read_speed)}" aria-label="Speed"><b id="spd">${Number(s.read_speed).toFixed(1)}×</b>`)}
       ${row("Hear it", "Plays a short sample with the voice and speed above.", `<button class="btn" id="sample">Hear sample</button>`)}
     </section>
 
@@ -268,7 +268,7 @@ async function pageSettings(main, section) {
       ${row("Show the bar on screen", "Drag the bar to move it anywhere, or right-click it to hide it. Hotkeys work either way, and you can always open Yappr from the tray icon by the clock.", `<input type="checkbox" class="toggle" data-k="show_bar" aria-label="Show the bar"${s.show_bar ? " checked" : ""}>`)}
       ${st.bar_moved ? row("Bar position", "You moved the bar. Put it back at the bottom centre of the screen?", `<button class="btn" id="barreset">Move it back</button>`) : ""}
       ${row("Microphone", "", `<select class="field" data-k="mic_device" aria-label="Microphone">${opt("", "Windows default", s.mic_device)}${mics.map((m) => opt(m, m.replace(/, MME$/, ""), s.mic_device)).join("")}</select>`)}
-      ${row("Free up memory after", "Yappr unloads its speech engine when you haven't dictated for a while; the next dictation then takes a second longer. 0 keeps it ready.", `<input class="field num" type="number" min="0" step="1" data-k="stt_idle_unload_min" value="${s.stt_idle_unload_min}" aria-label="Minutes idle"><span class="muted small">min idle</span>`)}
+      ${row("Free up memory after", "Yappr unloads its speech engine when you haven't dictated for a while; the next dictation then takes a second longer. 0 keeps it ready.", `<input class="field num" type="number" min="0" step="1" data-k="stt_idle_unload_min" value="${esc(s.stt_idle_unload_min)}" aria-label="Minutes idle"><span class="muted small">min idle</span>`)}
     </section>
 
     <section class="sgroup" id="s-keys"><h2>Shortcuts</h2>
@@ -285,9 +285,19 @@ async function pageSettings(main, section) {
   // auto-save every [data-k] control
   main.querySelectorAll("[data-k]").forEach((el) => {
     const ev = el.type === "checkbox" || el.tagName === "SELECT" || el.type === "range" ? "change" : "change";
-    el.addEventListener(ev, () => {
+    el.addEventListener(ev, async () => {
+      const k = el.dataset.k;
+      if (el.type === "number" && (el.value.trim() === "" || !el.checkValidity())) {
+        el.closest(".set").querySelector(".msg").innerHTML = `<span class="status bad">! Enter a number${el.min ? ` (${el.min} or more)` : ""}. Nothing was saved.</span>`;
+        return; // an empty or invalid box never becomes 0
+      }
       const v = el.type === "checkbox" ? el.checked : el.type === "number" || el.type === "range" ? Number(el.value) : el.value;
-      save({ [el.dataset.k]: v }, el);
+      if (k === "retention_days" && v < S.settings.retention_days &&
+          !confirm(`Keep notes and dictations for ${v} day${v === 1 ? "" : "s"}? Anything older is deleted for good.`)) {
+        el.value = S.settings.retention_days;
+        return;
+      }
+      save({ [k]: v }, el);
     });
   });
   const spd = main.querySelector('[data-k="read_speed"]');
@@ -424,6 +434,11 @@ async function start() {
   S = await api("state");
   if (page === "welcome" || !S.onboarded) { await go("today"); showWelcome(1); }
   else go(PAGES[page] ? page : "today");
+  setInterval(async () => { // the tray or bar asked for a page while the window was already open
+    const p = await api("take_page");
+    if (p === "welcome") showWelcome(1);
+    else if (PAGES[p]) { hideWelcome(); go(p); }
+  }, 800);
 }
 
 if (window.pywebview && window.pywebview.api && window.pywebview.api.call) start(); // methods ready already

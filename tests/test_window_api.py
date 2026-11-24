@@ -82,15 +82,40 @@ def test_page_name_is_sanitised():
 
 # ---------------------------------------------------------------- settings
 def test_save_settings_applies_and_coerces(app):
-    r = Api(app).save_settings({"retention_days": "0", "read_speed": 9, "use_llm_cleanup": 0, "stt_threads": 99})
+    r = Api(app).save_settings({"retention_days": "30", "read_speed": 9, "use_llm_cleanup": 0, "stt_threads": 99})
     s = app.store.settings
     assert r["ok"]
-    assert s.retention_days == 1  # never "0 = delete everything"
+    assert s.retention_days == 30
     assert s.read_speed <= 2.0
     assert s.use_llm_cleanup is False
     assert s.stt_threads == 4  # not editable from the window
-    assert json.loads(app.store.settings_path.read_text())["retention_days"] == 1
+    assert json.loads(app.store.settings_path.read_text())["retention_days"] == 30
     assert app.reloaded == 1
+
+
+@pytest.mark.parametrize("bad", [0, "0", "", None, -3, "  "])
+def test_retention_is_never_quietly_shortened(app, bad):
+    """A cleared or zero 'keep for' box must not turn into 'delete everything older than a day'."""
+    r = Api(app).save_settings({"retention_days": bad})
+    assert not r["ok"]
+    assert app.store.settings.retention_days == 90
+    assert not app.store.settings_path.exists()
+
+
+def test_a_bad_value_changes_nothing(app):
+    r = Api(app).save_settings({"read_speed": 1.5, "price_in_per_m": "lots"})
+    assert not r["ok"]
+    assert app.store.settings.read_speed == 1.3  # the good value wasn't applied either
+
+
+def test_connection_errors_are_plain():
+    from yappr.api import plain_error
+
+    assert "key wasn't accepted" in plain_error(Exception("Error code: 401 - invalid x-api-key"))
+    assert "internet" in plain_error(TimeoutError("timed out"))
+    assert "Couldn't reach" in plain_error(OSError("[WinError 10061] connection refused"))
+    for e in (Exception("401"), TimeoutError(), OSError("getaddrinfo failed"), Exception("weird")):
+        assert "Error" not in plain_error(e) and "Win" not in plain_error(e)
 
 
 def test_save_settings_refuses_plain_http_for_remote_ai(app):
@@ -213,3 +238,11 @@ def test_every_answer_the_page_reads_is_json(app, monkeypatch):
     for value in (a.state(), a.today(), a.meetings(), a.meeting("2026-11-24 1000 Q4 planning"), a.dictations(),
                   a.usage(), a.last_dictation(), a.save_settings({"read_speed": 1.2})):
         json.dumps(value)
+
+
+def test_page_requests_reach_an_open_window(app):
+    a = Api(app)
+    assert a.take_page() == ""
+    app.window_page = "settings"
+    assert a.take_page() == "settings"
+    assert a.take_page() == ""  # taken once

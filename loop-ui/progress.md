@@ -25,3 +25,15 @@ Base: rename/yappr-app @ 955d29e · Branch: ui/v1 (worktree ../yappr-ui, so the 
 - Window memory while open is ~237 MB private, above the 80-150 MB estimate given to the owner at the toolkit gate. Freed on close; idle unchanged. Reported in handoff.
 - D6 pass, D7 pass.
 - Bar (owner requirement) verified live with tools/e2e_bar.py: drag (805,953)->(205,453), saved [0.187, 0.498], same spot after restart, right-click "Hide the bar" -> hidden, show_bar false saved. Found: the bar never takes keyboard focus (by design, so it can't steal typing), so its right-click menu is mouse-only; keyboard users hide/show it from Settings or the tray.
+
+## Review round 1 (fresh reviewer): CHANGES, 3 blockers / 6 should / 3 nits
+- F1 blocker retention data-loss: fixed. Empty/invalid number boxes never save (page) and save_settings rejects empty/negative/0-day retention instead of clamping; lowering retention asks first; all values validated before any is applied (also F10). Tests: test_retention_is_never_quietly_shortened, test_a_bad_value_changes_nothing (fail on the old code: 5 failed).
+- F2 blocker WebView2 network: confirmed and fixed. Control run (no switches): 3 remote connections from msedgewebview2 within 70 s of launch (150.171.23.17:443, 150.171.29.11:443, 23.200.0.21:80). With WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS (no background networking, component update, SmartScreen, pings, domain reliability, phishing detection) + IsReputationCheckingRequired=False: 0 remote, 0 loopback over 120 s from launch while clicking through every page. tools/netwatch_window.py; results loop-ui/netwatch-control.json / netwatch-fixed.json.
+- F3 blocker D5 'fresh install': agreed, D5 -> waiting on an install.ps1 run on a clean machine.
+- F4 D3 human timing: agreed, D3 -> waiting on the owner's timed run.
+- F5 window memory 237 MB vs 80-150 MB estimate: owner decision in handoff.
+- F6 font: owner decision in handoff.
+- F7 review page gaps: added read-aloud bar messages, Today/My words dark; tray menu + installer still text only (tray menu is drawn by Windows; installer not run here).
+- F8 tray page ignored when window open: fixed (Api.take_page, page polls every 0.8 s while open). Test added.
+- F9 back-to-back counter: script takes the expected word; reran.
+- F11 esc() on numbers: done. F12 plain connection errors: plain_error(), test added.

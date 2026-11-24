@@ -69,6 +69,24 @@ def parse_summary(md: str) -> dict:
     return {"title": title, "when": when, "sections": sections}
 
 
+def plain_error(e: Exception) -> str:
+    """A connection test failure, in words people can act on."""
+    s = f"{type(e).__name__} {e}".lower()
+    if any(x in s for x in ("401", "unauthorized", "authentication", "invalid x-api-key", "invalid api key", "incorrect api key")):
+        return "The key wasn't accepted. Check you copied all of it, and that it's for the service you picked."
+    if any(x in s for x in ("403", "permission", "forbidden")):
+        return "The key works but isn't allowed to use this model. Check your account with the AI service."
+    if "404" in s or "not found" in s or "model" in s and "exist" in s:
+        return "The service didn't recognise the address or model name. Check both under More AI options."
+    if any(x in s for x in ("429", "rate", "quota", "credit", "billing", "insufficient")):
+        return "The AI service says the account is out of credit or busy. Check billing on its website."
+    if any(x in s for x in ("timeout", "timed out")):
+        return "The AI service took too long to answer. Check your internet connection and try again."
+    if any(x in s for x in ("getaddrinfo", "name resolution", "connection", "refused", "unreachable", "ssl", "certificate")):
+        return "Couldn't reach the AI service. Check your internet connection and the service address."
+    return "Couldn't connect to the AI service. Check the key and try again."
+
+
 class Api:
     """Methods the window calls. Each returns plain JSON-able data."""
 
@@ -218,16 +236,31 @@ class Api:
             problem = base_url_problem(changes.get("llm_base_url", s.llm_base_url))
             if problem:  # the key would be sent there, so check before changing anything
                 return {"ok": False, "error": f"{problem}. Nothing was saved."}
-        try:
+        new = {}
+        try:  # check everything first, so a bad value never leaves half the changes applied
             for k, v in changes.items():
                 cur = getattr(s, k)
-                setattr(s, k, type(cur)(v) if not isinstance(cur, bool) else bool(v))
+                if isinstance(cur, bool):
+                    new[k] = bool(v)
+                elif isinstance(cur, (int, float)):
+                    if v is None or (isinstance(v, str) and not v.strip()):
+                        return {"ok": False, "error": "That box can't be empty. Nothing was saved."}
+                    new[k] = type(cur)(v)
+                    if new[k] < 0:
+                        return {"ok": False, "error": "That can't be below 0. Nothing was saved."}
+                else:
+                    new[k] = type(cur)(v)
         except (TypeError, ValueError):
-            return {"ok": False, "error": "One of the values isn't a number. Nothing else changed."}
-        s.retention_days = max(1, int(s.retention_days))
-        s.read_speed = clamp_speed(float(s.read_speed))
-        if s.read_voice not in VOICES:
-            s.read_voice = "af_heart"
+            return {"ok": False, "error": "That isn't a number. Nothing was saved."}
+        if "retention_days" in new and new["retention_days"] < 1:
+            # never quietly turn a cleared box into "delete everything older than a day"
+            return {"ok": False, "error": "Keep things for at least 1 day. Nothing was saved."}
+        if "read_speed" in new:
+            new["read_speed"] = clamp_speed(new["read_speed"])
+        if new.get("read_voice", s.read_voice) not in VOICES:
+            new["read_voice"] = "af_heart"
+        for k, v in new.items():
+            setattr(s, k, v)
         self.store.save_settings()
         self.app.reader.set_speed(s.read_speed)
         self.app.bar.post(lambda: (self.app.bar.win.deiconify() if s.show_bar else self.app.bar.win.withdraw()))
@@ -273,7 +306,8 @@ class Api:
                               kind="test", timeout=15)
             return {"ok": True, "message": f"Connected. Replied in {time.monotonic() - t:.1f} s", "sample": out}
         except Exception as e:
-            return {"ok": False, "message": f"Couldn't connect: {e}"[:200]}
+            log.info("test connection failed: %r", e)
+            return {"ok": False, "message": plain_error(e)}
 
     def usage(self) -> dict:
         from .llm import usage_summary
@@ -311,6 +345,11 @@ class Api:
     def finish_onboarding(self) -> bool:
         self.store.set_onboarded()
         return True
+
+    def take_page(self) -> str:
+        """A page the tray or bar asked for while the window was open ("" if none); asking clears it."""
+        page, self.app.window_page = getattr(self.app, "window_page", ""), ""
+        return page
 
     def dismiss_checklist(self) -> bool:
         (self.store.root / ".checklist-hidden").write_text("Hidden from Today.\n", encoding="utf-8")

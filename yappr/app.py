@@ -91,6 +91,7 @@ class App:
         self.read_lock = threading.Lock()
         self.tray = None
         self.window_proc = None  # the Yappr window (its own process, only while open)
+        self.window_page = ""  # a page asked for (tray, bar) while the window was already open
         self.api_server = Server(Api(self))
 
     def _make_llm(self) -> LLMClient:
@@ -483,6 +484,7 @@ class App:
         """Show the Yappr window (Today, Notes, My words, Settings, or the welcome)."""
         p = self.window_proc
         if p is not None and p.poll() is None:
+            self.window_page = page  # the open window picks this up (Api.take_page) and switches to it
             focus_process_window(p.pid)
             return
         env = dict(os.environ, YAPPR_WINDOW_PIPE=self.api_server.address, YAPPR_WINDOW_KEY=self.api_server.key.hex())

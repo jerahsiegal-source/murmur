@@ -83,10 +83,30 @@ def _test_driver(win, folder: Path) -> None:
         time.sleep(0.2)
 
 
+# The window shows only Yappr's own page, so WebView2 has no reason to go online. These switch off its
+# background traffic (updater, SmartScreen, diagnostics, pings), which otherwise starts on its own.
+# The environment variable takes precedence over the arguments pywebview sets, so keep its one flag too.
+BROWSER_ARGS = " ".join([
+    "--disable-features=ElasticOverscroll,msSmartScreenProtection,msEdgeEnhanceSecurityMode",
+    "--disable-background-networking", "--disable-component-update", "--disable-domain-reliability",
+    "--disable-client-side-phishing-detection", "--no-pings", "--disable-sync", "--metrics-recording-only",
+    "--disable-breakpad", "--no-first-run",
+])
+
+
+def no_reputation_checks(win) -> None:
+    """Tell WebView2 not to send page addresses to SmartScreen (newer runtimes only)."""
+    try:
+        win.native.browser.webview.CoreWebView2.Settings.IsReputationCheckingRequired = False
+    except Exception:
+        pass
+
+
 def main() -> None:
     import webview
     from multiprocessing.connection import Client
 
+    os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = BROWSER_ARGS
     page = sys.argv[1] if len(sys.argv) > 1 else "today"
     try:  # group with Yappr on the taskbar
         import ctypes
@@ -101,6 +121,7 @@ def main() -> None:
 
     def shown():
         set_icon(TITLE)
+        no_reputation_checks(win)
         if page == "welcome":  # opened by the app on first run, not by a click: come to the front once
             time.sleep(1.5)
             win.on_top = False
