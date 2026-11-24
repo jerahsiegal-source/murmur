@@ -364,8 +364,16 @@ class App:
                 return
             s = self.store.settings
             try:
+                fake = getenv("YAPPR_FAKE_MEETING")  # end-to-end tests: a recorded call instead of the devices
+                factory = None
+                if fake:
+                    from .meeting import FileCapture
+
+                    speed = float(getenv("YAPPR_FAKE_MEETING_SPEED") or 1)
+                    factory = lambda mic, sys_: FileCapture(mic, sys_, Path(fake), speed)  # noqa: E731
                 m = MeetingSession(Path(s.meetings_dir), title or "Meeting", self.transcriber, self.llm, s,
-                                   on_status=self._meeting_status, dictionary=lambda: self.store.dictionary)
+                                   on_status=self._meeting_status, dictionary=lambda: self.store.dictionary,
+                                   capture_factory=factory)
                 m.start()
             except Exception:
                 log.exception("meeting start failed")

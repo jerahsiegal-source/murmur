@@ -31,18 +31,18 @@
   "item": "No jargon on screen. Terms like STT, base URL, tokens or provider never appear without a plain-language explanation.",
   "check": "a review of every on-screen string, with each term listed and how it is handled",
   "kind": "judgment",
-  "status": "pending",
-  "attempts": 0,
-  "evidence": ""
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "loop-ui/jargon-review.md: 224 window strings (loop-ui/strings-window.txt) + bar, prompt, tray, toasts, installer reviewed; each listed term is absent or explained; 9 bar messages and installer failure text reworded (commit 'D4: plain wording…')."
  },
  {
   "id": "D5",
   "item": "End-to-end: fresh install -> first run -> dictation pastes -> a meeting is recorded and its notes are shown -> read-aloud works, all in the redesigned UI.",
   "check": "a run in the real app, with screenshots",
   "kind": "user-facing",
-  "status": "pending",
-  "attempts": 0,
-  "evidence": ""
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "tools/e2e_first_run.py --full on a brand-new profile in the real app: welcome -> first dictation in practice box -> AI helper (local fake service) -> Today; dictation pasted into another app (e2e_dictation: latency 0.31 s, text correct); meeting started from Today, recorded call (meet3, 289 s at 10x via YAPPR_FAKE_MEETING) -> bar 'Taking notes' -> Stop notes -> summary.md written (39 transcript lines) -> shown in Notes; read-aloud in Notepad: first sound 0.82 s, no gaps, stop silent, clipboard restored (long text run). Screens: loop-ui/shots/first-run-1..9.png."
  },
  {
   "id": "D6",

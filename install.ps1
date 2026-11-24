@@ -28,7 +28,7 @@ $venvPy = "$root\.venv\Scripts\python.exe"
 # The app used to be called Murmur: drop its old package entry from this environment if present.
 try { & $venvPy -m pip uninstall --quiet -y murmur-dictation 2>$null } catch {}  # stderr only says "not installed"
 & $venvPy -m pip install --quiet -e "$root"
-if ($LASTEXITCODE -ne 0) { throw "pip install failed" }
+if ($LASTEXITCODE -ne 0) { throw "Installing Yappr failed. The error above says why." }
 Ok "Yappr and its parts are installed"
 
 Step 2 "Downloading the speech engine (one time, about 650 MB). It runs on this PC, so your voice never leaves it."
