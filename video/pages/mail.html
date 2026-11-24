@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>New message</title>
+<style>
+ html,body{margin:0;height:100%;font-family:"Segoe UI Variable","Segoe UI",sans-serif;background:#eef2f7;color:#1f2933}
+ .top{background:#2f5d8a;color:#fff;padding:14px 26px;font-size:19px;font-weight:600;letter-spacing:.2px}
+ .card{margin:22px 26px;background:#fff;border-radius:12px;box-shadow:0 1px 4px #0002;overflow:hidden}
+ .row{display:flex;gap:14px;padding:13px 22px;border-bottom:1px solid #e5eaf0;font-size:18px}
+ .row span{color:#7b8794;width:74px}
+ textarea{display:block;width:100%;box-sizing:border-box;height:270px;border:0;outline:0;resize:none;padding:20px 22px;
+   font:23px/1.5 "Segoe UI Variable","Segoe UI",sans-serif;color:#1f2933}
+ .foot{padding:12px 22px;border-top:1px solid #e5eaf0}
+ .send{display:inline-block;background:#2f5d8a;color:#fff;border-radius:8px;padding:9px 26px;font-size:17px;font-weight:600}
+</style>
+<div class="top">Mail</div>
+<div class="card">
+ <div class="row"><span>To</span><b>Sam Ortiz</b></div>
+ <div class="row"><span>Subject</span>Launch plan</div>
+ <textarea id="t" autofocus spellcheck="false"></textarea>
+ <div class="foot"><span class="send">Send</span></div>
+</div>
+<script>addEventListener("focus",()=>document.getElementById("t").focus())</script>

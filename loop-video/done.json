@@ -1,0 +1,101 @@
+[
+ {
+  "id": "D1",
+  "item": "One video file, 16:9, between 30 and 60 seconds, in a format a website can play",
+  "check": "file path plus its reported duration, resolution and format.",
+  "kind": "code",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "video/out/yappr-demo.mp4: ffprobe h264 1920x1080 30fps yuv420p + aac 48 kHz, mp4 with faststart, 51.33 s, 4.83 MB."
+ },
+ {
+  "id": "D2",
+  "item": "Shows dictation: speaking and the words appearing where the cursor is, in a real app, the way Wispr Flow works",
+  "check": "watch the video; timestamp of the scene.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "0:08.0-0:20.6 Mail (Edge) and 0:20.6-0:29.0 Team chat (Chrome). Real app log for these takes: raw 'Hey Sam, um, thanks...' pasted as 'Hey Sam, thanks...'; raw 'I'll uh, send the the invite list' pasted as 'I'll send the invite list' (method rules). Stills: loop-video/stills/final-sheet0.png."
+ },
+ {
+  "id": "D3",
+  "item": "Shows read aloud: highlighting text and Yappr reading it back, audibly",
+  "check": "watch with sound on; timestamp.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "0:29.0-0:37.3 Reader (Edge): text highlighted, Ctrl+Alt+X, the app's own speech recorded from the speakers sits at 0:31.3-0:36.1 in the mix (take: sound 0.8 s after the key). Stills: final-sheet1.png. Not heard by the agent: owner listens."
+ },
+ {
+  "id": "D4",
+  "item": "Shows pasting an API key into Yappr to set it up",
+  "check": "watch; timestamp; the key on screen is a dummy.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "0:37.3-0:45.3: click the bar, Settings > AI helper, paste, Save, app shows '✓ Key saved'. The key is a made-up demo value, shown as dots, stored only in video/build/demo-keys.json."
+ },
+ {
+  "id": "D5",
+  "item": "States the pitch outright, naming both: an open source Wispr Flow + Speechify in one",
+  "check": "appears on screen and in the voiceover; timestamp.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "On screen 0:03.3-0:08.0 ('An open source Wispr Flow + Speechify in one app') and again on the end card from 0:47; narrated at 0:03.6 (vo/pitch.wav: 'An open source Wispr Flow and Speechify, in one app.')."
+ },
+ {
+  "id": "D6",
+  "item": "Footage is the real Yappr app, recorded working, polished with branded titles, zooms and transitions",
+  "check": "every app scene matches how the current app actually looks and behaves.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "All app scenes are take 3 of the real app from this checkout (video/record.py), contact sheet loop-video/stills/take3-contact-sheet.png. Edits: zooms, captions, a cut over ~7 s of the window loading, key scene at 1.35x, a cut over Edge's selection toolbar. Stand-ins disclosed in handoff: speech fed through the fake-mic hook, Ctrl+Shift pressed instead of Ctrl+Win, throwaway key store."
+ },
+ {
+  "id": "D7",
+  "item": "Sound: background music plus an AI voiceover, with captions so it still makes sense muted",
+  "check": "watch once with sound, once muted.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Mix: code-composed music ducked under voice, Kokoro narration (7 lines), captions on every app scene incl. the spoken words. volumedetect mean -16.7 dB, max -0.6 dB; silencedetect (-40 dB, 0.6 s): none. Captions read from stills. Sound quality not heard by the agent."
+ },
+ {
+  "id": "D8",
+  "item": "Branding: the app's own colour scheme, the Yappr logo and Skip the dog",
+  "check": "stills from the video side by side with the app.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Butter/ink/cream/bark from DESIGN.md, Segoe UI Variable, app icon on pitch and end cards, Skip in the intro (head = icon paths). Stills final-sheet0/1.png next to the app's own window in the key scene."
+ },
+ {
+  "id": "D9",
+  "item": "Looks professional: no jitter, typos, stray windows, notifications, personal data or dead air",
+  "check": "a still from every scene checked, then owner review of the full video.",
+  "kind": "judgment",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Agent part done: stills across all scenes checked after each render, independent reviewer checked all one-second frames (nothing personal, no typos), no silent gaps. Owner said 'Looks good' to the first full cut (2026-11-24); final file has the reviewer's fixes, so a last look closes this. Owner signed off on the final file: 'Yes, finished' (2026-11-24)."
+ },
+ {
+  "id": "D10",
+  "item": "End to end: someone who has never seen Yappr can say after one viewing what it does and that it is open source",
+  "check": "owner watches it start to finish and agrees.",
+  "kind": "judgment",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Owner said 'Looks good' to the first full cut (2026-11-24). Waiting on the owner's start-to-finish viewing of the final file. Owner signed off on the final file: 'Yes, finished' (2026-11-24)."
+ },
+ {
+  "id": "D11",
+  "item": "Nothing in the app or repo is broken or changed in behaviour by making the video",
+  "check": "existing tests still pass; working tree shows only video assets added.",
+  "kind": "regression",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "pytest: 169 passed (same as baseline). git status: only INTENT-video.md, loop-video/ and video/ added; no file under yappr/, tests/ or tools/ changed."
+ }
+]
