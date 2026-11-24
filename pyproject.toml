@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "murmur-dictation"
+version = "0.1.0"
+description = "Local-first hotkey dictation and meeting notes for Windows. Bring your own API key."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+  "numpy>=1.26,<3",
+  "sounddevice>=0.4.6",
+  "soundfile>=0.12",
+  "onnx-asr[cpu,hub]>=0.12,<0.13",
+  "onnxruntime>=1.20",
+  "anthropic>=2.13,<3",
+  "PyAudioWPatch>=0.2.12",
+  "pystray>=0.19",
+  "pillow>=10",
+  "keyring>=24",
+  "icalendar>=5",
+  "recurring-ical-events>=3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "psutil"]
+
+[project.scripts]
+murmur = "murmur.app:main"
+
+[tool.setuptools]
+packages = ["murmur"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

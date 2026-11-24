@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+# Local user data — never commit
+data/
+*.wav
+*.flac
+*.ogg
+*.mp3
+config.local.json
+dictionary.local.json
+.env
+models/
