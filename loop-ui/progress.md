@@ -46,3 +46,4 @@ Base: rename/yappr-app @ 955d29e · Branch: ui/v1 (worktree ../yappr-ui, so the 
 - Stopping review here: no blocker or should open except owner decisions (F5 memory, F6 font, F7 tray screenshot -> D2 sign-off).
 - Owner decision 2026-11-24: keep pywebview at ~237 MB while the window is open (reviewer F5 closed).
 - Owner decision 2026-11-24: keep Segoe UI Variable; DESIGN.md Type updated (reviewer F6 closed).
+- D2 pass: owner signed off 2026-11-24. 5/7 passing; D3 (timed run by hand) and D5 (installer on a clean PC) wait on the owner.

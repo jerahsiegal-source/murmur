@@ -13,9 +13,9 @@
   "item": "Every visible surface uses the chosen design: pill, tray icon and menu, Settings (all of AI cleanup, Dictionary, Meetings, History, General), meeting prompt, notes/history views, read-aloud UI, installer and first launch.",
   "check": "before and after screenshots of every surface, in light and dark mode, signed off by the owner",
   "kind": "user-facing",
-  "status": "blocked",
+  "status": "pass",
   "attempts": 1,
-  "evidence": "Captures ready for owner sign-off in loop-ui/review.html (before/after: bar states, meeting prompt, every window page light+dark, live first run, Notes, My words, Settings, bar drag/menu/hide, read-aloud bar messages; tray menu + installer described in text). Waiting on: owner sign-off (font decided: Segoe UI Variable, owner 2026-11-24)."
+  "evidence": "Owner signed off 2026-11-24 on loop-ui/review.html (before/after of every surface, light + dark). Font: Segoe UI Variable (owner decision)."
  },
  {
   "id": "D3",

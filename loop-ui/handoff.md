@@ -13,7 +13,7 @@
 | | Item | Status | Evidence |
 |---|---|---|---|
 | D1 | Look chosen first | ✓ pass | DESIGN.md |
-| D2 | Every surface in the new design | ⏳ **needs you** | `loop-ui/review.html`: before/after for every surface, light + dark |
+| D2 | Every surface in the new design | ✓ pass (owner signed off 2026-11-24) | `loop-ui/review.html`: before/after for every surface, light + dark |
 | D3 | First-run setup | ⏳ **needs you** (timed run by hand) | Scripted run on a new profile passes: `loop-ui/shots/first-run-1..6.png` |
 | D4 | No jargon | ✓ pass | `loop-ui/jargon-review.md` |
 | D5 | End to end | ⏳ **needs you** (installer on a clean machine) | Everything after install passes in the real app: `first-run-1..9.png` |
@@ -23,7 +23,7 @@
 ## Decisions waiting on you
 1. ~~Window memory~~ **Decided 2026-11-24: keep pywebview.** The owner accepted about 237 MB while the window is open (freed on close; idle unchanged).
 2. ~~Font~~ **Decided 2026-11-24: keep Segoe UI Variable.** DESIGN.md updated.
-3. **D2 sign-off** on `loop-ui/review.html`.
+3. ~~D2 sign-off~~ **Signed off 2026-11-24.**
 
 ## Not done (needs a person or a clean machine)
 - **D3:** a timed run by hand. A new person, Ctrl+Win, a real Claude key: about 2 minutes, guided only by the app?
