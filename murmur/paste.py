@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 from ctypes import wintypes
+from typing import Callable
 
 from .hotkeys import (
     MURMUR_TAG,
@@ -301,3 +302,84 @@ def paste_text(text: str, restore_after: float = 1.0, max_wait: float = 30.0) ->
     else:
         _pending["snapshot"] = None
     return True
+
+
+# ---- read the highlighted text (copy it, then put the user's clipboard back)
+user32.GetClipboardSequenceNumber.restype = wintypes.DWORD
+user32.GetForegroundWindow.restype = wintypes.HWND
+user32.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+VK_C, VK_INSERT, VK_MASK = 0x43, 0x2D, 0xE8
+# Terminals: Ctrl+C can interrupt the running program, so only Ctrl+Insert is used there.
+TERMINAL_CLASSES = {"ConsoleWindowClass", "CASCADIA_HOSTING_WINDOW_CLASS", "mintty", "VirtualConsoleClass",
+                    "PuTTY", "Alacritty", "org.wezfurlong.wezterm"}
+
+
+def foreground_class() -> str:
+    buf = ctypes.create_unicode_buffer(256)
+    user32.GetClassNameW(user32.GetForegroundWindow(), buf, 256)
+    return buf.value
+
+
+def _press_copy_locally(copy_vk: int) -> None:
+    """Fallback when the hotkey helper isn't available (tools/tests): uses the logical key state."""
+    down = lambda vk: bool(user32.GetAsyncKeyState(vk) & 0x8000)  # noqa: E731
+    lctrl_held = down(VK_LCONTROL)
+    keys: list[tuple[int, bool]] = [(VK_LCONTROL, False)]  # before the releases: no Alt-menu / Start menu
+    keys += [(vk, True) for vk in (VK_LMENU, VK_RMENU, VK_LSHIFT, VK_RSHIFT, VK_LWIN, VK_RWIN) if down(vk)]
+    keys += [(copy_vk, False), (copy_vk, True)]
+    if not lctrl_held:  # holding Right Ctrl: still release the Left Ctrl we pressed
+        keys.append((VK_LCONTROL, True))
+    send_keys(keys)
+
+
+def _wait_seq(seq: int, timeout: float) -> bool:
+    end = time.monotonic() + timeout
+    while user32.GetClipboardSequenceNumber() == seq:
+        if time.monotonic() >= end:
+            return False
+        time.sleep(0.01)
+    return True
+
+
+def _restore_if_late_copy(seq: int, before, wait: float = 2.0) -> None:
+    """The app may copy after we gave up: put the user's clipboard back if that happens."""
+    def run():
+        if _wait_seq(seq, wait) and before is not None:
+            time.sleep(0.05)
+            with _paste_lock:
+                restore_clipboard(before)
+
+    threading.Thread(target=run, name="clipboard-late-copy", daemon=True).start()
+
+
+def copy_selection(press: Callable[[int], None] | None = None, timeout: float = 0.6,
+                   insert_wait: float = 0.2) -> str | None:
+    """Copy the highlighted text in the focused window and return it (None if nothing was highlighted).
+
+    `press(vk)` presses Ctrl+<vk> for the app; Murmur passes its hotkey helper, which knows which keys
+    the user is physically holding and restores them afterwards. Ctrl+Insert is tried first because
+    it only ever copies (Ctrl+C interrupts programs in terminals); Ctrl+C is the fallback outside
+    terminals. The user's clipboard is put back afterwards, even if the app copies late.
+    """
+    press = press or _press_copy_locally
+    with _paste_lock:
+        before = snapshot_clipboard()
+        seq = user32.GetClipboardSequenceNumber()
+        terminal = foreground_class() in TERMINAL_CLASSES
+        press(VK_INSERT)
+        copied = _wait_seq(seq, timeout if terminal else insert_wait)
+        if not copied and not terminal:
+            press(VK_C)
+            copied = _wait_seq(seq, timeout)
+        if not copied:
+            _restore_if_late_copy(seq, before)
+            return None  # nothing highlighted (the app didn't copy anything)
+        text = None
+        for _ in range(10):  # some apps announce the copy before the text is readable
+            text = get_clipboard_text()
+            if text is not None:
+                break
+            time.sleep(0.01)
+        if before is not None:
+            restore_clipboard(before)
+        return text

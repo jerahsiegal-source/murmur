@@ -6,6 +6,9 @@ Chord behaviour:
 - Ctrl+Win again           -> stop hands-free and paste
 - Ctrl+Win + any other key -> cancelled (so Ctrl+Win+D / arrows still work normally)
 - Alt+Shift+Z              -> paste the last result again
+- Ctrl+Alt+X               -> read the highlighted text aloud (again: stop)
+- Ctrl+Alt+P               -> pause / resume reading
+- Ctrl+Alt+] / Ctrl+Alt+[  -> read faster / slower
 
 The decision logic is a pure state machine (HotkeyMachine) so it can be unit tested;
 KeyboardHook wires it to Windows.
@@ -27,6 +30,9 @@ VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU = 0xA0, 0xA1,
 VK_LWIN, VK_RWIN = 0x5B, 0x5C
 VK_SPACE = 0x20
 VK_Z = 0x5A
+VK_X, VK_P, VK_OEM_4, VK_OEM_6 = 0x58, 0x50, 0xDB, 0xDD  # X, P, [, ]
+READ_KEYS = {VK_X: "read", VK_P: "read_pause", VK_OEM_6: "read_faster", VK_OEM_4: "read_slower"}
+READ_REPEATS = {VK_OEM_6, VK_OEM_4}  # holding [ or ] keeps changing speed; X and P act once per press
 VK_MASK = 0xE8  # unassigned; used to stop the Start menu from opening on Win release
 
 CTRL = {VK_CONTROL, VK_LCONTROL, VK_RCONTROL}
@@ -120,6 +126,21 @@ class HotkeyMachine:
                 events.append("cancel")
             return False, events
 
+        # AltGr arrives as LCtrl+RAlt: on many layouts AltGr+X/P/[/] types a character, so leave it alone
+        left_alt = bool(self.down & {VK_MENU, VK_LMENU}) or {VK_RMENU, VK_RCONTROL} <= self.down
+        if (vk in READ_KEYS and self._has(CTRL) and left_alt
+                and not self._has(WIN) and not self._has(SHIFT)):
+            repeat = vk in self.suppressed_up  # key auto-repeat while held
+            self.suppressed_up.add(vk)
+            if not repeat or vk in READ_REPEATS:
+                if vk != VK_X:
+                    # with the key swallowed, apps would see a bare Ctrl+Alt tap (Office/ONLYOFFICE then
+                    # show key tips and eat the next shortcut). X is masked by the app: when it starts a
+                    # read, the copy keys do that job, and a mask tap would clear a terminal's selection.
+                    events.append("mask")
+                events.append(READ_KEYS[vk])
+            return True, events
+
         if vk == VK_Z and self._has(ALT) and self._has(SHIFT) and not self._has(CTRL) and not self._has(WIN):
             self.suppressed_up.add(vk)
             # mask: with Z swallowed, Windows would see a bare Alt+Shift tap and switch keyboard layout
@@ -185,6 +206,7 @@ class KeyboardHook:
         self._lock = threading.Lock()
         self._down_at: dict[int, float] = {}
         self._stale: dict[int, int] = {}
+        self._repressed: dict[int, float] = {}  # modifiers we pressed back down after a copy
 
     def start(self) -> None:
         threading.Thread(target=self._dispatch, name="hotkey-dispatch", daemon=True).start()
@@ -236,10 +258,57 @@ class KeyboardHook:
             log.exception("hook callback")
         return user32.CallNextHookEx(None, n_code, w_param, l_param)
 
+    def copy(self, copy_vk: int) -> None:
+        """Press Ctrl+<copy_vk> for the focused app while the user may still hold Ctrl+Alt.
+
+        Alt/Shift/Win are released for the app (else it would see Ctrl+Alt+C), then pressed back
+        down if the user is still physically holding them, so the next tap of X/P/]/[ is still
+        Ctrl+Alt+<key> and never reaches the app as Ctrl+X (cut) or Ctrl+P (print).
+        """
+        from .paste import send_keys
+
+        with self._lock:
+            down = set(self.machine.down)
+        release = sorted(vk for vk in down if vk in ALT | SHIFT | WIN)
+        lctrl_held = VK_LCONTROL in down
+        # A Ctrl press goes first: it sits between the user's Alt/Win press and our release, so no
+        # menu / Start menu opens. (Not the VK_MASK tap: terminals clear the selection on any key.)
+        # Left Ctrl is released again unless the user is physically holding Left Ctrl themselves
+        # (if they hold Right Ctrl, an injected Left Ctrl must not be left down).
+        seq = [(VK_LCONTROL, False)] + [(vk, True) for vk in release]
+        seq += [(copy_vk, False), (copy_vk, True)]
+        if not lctrl_held:
+            seq.append((VK_LCONTROL, True))
+        send_keys(seq)
+        time.sleep(0.02)
+        with self._lock:
+            still = [vk for vk in release if vk in self.machine.down]
+            now = time.monotonic()
+            for vk in still:
+                self._repressed[vk] = now
+        if still:  # the mask tap stops the later real Alt/Win release from opening a menu
+            send_keys([(vk, False) for vk in still] + [(VK_MASK, False), (VK_MASK, True)])
+
+    def _heal_repressed(self, now: float) -> None:
+        """If the user let go of a modifier just as we pressed it back down, release it for them."""
+        from .paste import send_keys
+
+        for vk, t in list(self._repressed.items()):
+            if vk in self.machine.down or now - t < 0.15:
+                continue  # still physically held (fine) or too soon to tell
+            self._repressed.pop(vk, None)
+            if user32.GetAsyncKeyState(vk) & 0x8000:
+                log.warning("modifier vk %#x stuck down after copy; releasing", vk)
+                send_keys([(VK_MASK, False), (VK_MASK, True), (vk, True)])
+
     def _resync(self) -> None:
         while True:
             time.sleep(0.1)
             now = time.monotonic()
+            try:
+                self._heal_repressed(now)
+            except Exception:
+                log.exception("heal modifiers")
             for vk in list(self.machine.down):
                 if now - self._down_at.get(vk, now) < 0.3:
                     continue
@@ -316,6 +385,10 @@ class HotkeyProcess:
 
     def reset(self) -> None:
         self._send("reset")
+
+    def copy(self, copy_vk: int) -> None:
+        """Ask the helper (which knows which keys are physically held) to press the copy keys."""
+        self._send(f"copy {int(copy_vk)}")
 
     def _send(self, cmd: str) -> None:
         with self._wlock:

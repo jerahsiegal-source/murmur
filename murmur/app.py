@@ -18,16 +18,19 @@ from .audio import MicRecorder
 from .calendar_watch import CalendarWatcher
 from .cleanup import Cleaner
 from .config import Store
-from .hotkeys import HotkeyProcess
+from .hotkeys import VK_MASK, HotkeyProcess
 from .llm import LLMClient, make_llm
-from .paste import paste_text
+from .paste import copy_selection, paste_text, tap_key
+from .speech_text import clean_for_speech
 from .stt import Transcriber
+from .tts import Reader, Voice, clamp_speed
 from .ui import Bar, MeetingPrompt
 
 log = logging.getLogger("murmur")
 
 
 def setup_logging(data_dir: Path) -> None:
+    logging.getLogger("phonemizer").setLevel(logging.ERROR)  # warns on every chunk, harmlessly
     h = RotatingFileHandler(data_dir / "murmur.log", maxBytes=1_000_000, backupCount=2, encoding="utf-8")
     h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     root = logging.getLogger()
@@ -74,6 +77,12 @@ class App:
         self.prompts: list = []
         self.calendar = CalendarWatcher(lambda: self.store.settings.calendar_ics_url, self._calendar_prompt,
                                         lambda: self.store.settings.calendar_prompt_min_before)
+        self.voice = Voice(self.data)
+        self.reader = Reader(self.voice, lambda: self.store.settings.read_voice,
+                             lambda: self.store.settings.read_speed,
+                             on_error=lambda msg: self.bar.toast(msg, 4),
+                             busy=lambda: self.recording or self.meeting is not None)
+        self.read_lock = threading.Lock()
         self.tray = None
         self.settings_win = None
 
@@ -98,6 +107,7 @@ class App:
         self._start_tray()
         if not self.store.settings.show_bar:
             self.bar.win.withdraw()
+        self.root.after(3000, self.voice.preload_async)  # after startup, so it never slows it down
         log.info("Murmur started")
 
     def quit(self) -> None:
@@ -115,6 +125,7 @@ class App:
                 self.bar.toast("Finishing meeting notes…", 600)
                 m.stop()
                 m.wait(600)
+            self.reader.stop()
             self.hook.stop()
             if self.tray is not None:
                 self.tray.stop()
@@ -156,6 +167,63 @@ class App:
                 threading.Thread(target=paste_text, args=(self.last_text,), daemon=True).start()
             else:
                 self.bar.toast("Nothing to paste yet")
+        elif e == "read":
+            threading.Thread(target=self.read_selection, args=(time.monotonic(),), name="read", daemon=True).start()
+        elif e == "read_pause":
+            if self.reader.active:
+                self.bar.toast("Paused" if self.reader.toggle_pause() else "Reading", 1.2)
+        elif e in ("read_faster", "read_slower"):
+            self.change_read_speed(0.1 if e == "read_faster" else -0.1)
+
+    # ------------------------------------------------------------ read aloud
+    def read_selection(self, t0: float | None = None) -> None:
+        """Ctrl+Alt+X: read the highlighted text, or stop if already reading."""
+        if not self.read_lock.acquire(blocking=False):
+            tap_key(VK_MASK)  # X was swallowed: don't leave the app a bare Ctrl+Alt tap
+            return  # still grabbing the previous selection
+        copied = False
+        try:
+            if self.reader.active:
+                tap_key(VK_MASK)  # X was swallowed: don't leave the app a bare Ctrl+Alt tap
+                self.reader.stop()
+                return
+            if self.recording or self.meeting is not None:
+                tap_key(VK_MASK)
+                # the mic / meeting recording would pick the voice up
+                self.bar.toast("Not while recording" if self.recording else "Not during meeting notes", 2)
+                return
+            t0 = time.monotonic() if t0 is None else t0
+            copied = True  # the copy keys (Ctrl+Insert/C) stand in for the mask from here on
+            raw = copy_selection(self.hook.copy)
+            t_copy = time.monotonic()
+            if raw is None:
+                tap_key(VK_MASK)  # nothing was copied; the copy keys may not have reached the app
+            text = clean_for_speech(raw or "")
+            if not text:
+                self.bar.toast("Highlight some text first", 2)
+                return
+            if not self.voice.loaded:
+                self.bar.toast("Loading voice…", 2)
+            if self.recording or self.meeting is not None:  # started while we were copying
+                return
+            self.reader.speak(text, t0=t0)
+            log.info("read: %d chars selected, copy %.3fs", len(raw or ""), t_copy - t0)
+        except Exception:
+            log.exception("read aloud failed")
+            if not copied:
+                tap_key(VK_MASK)
+            self.bar.toast("Couldn't read that")
+        finally:
+            self.read_lock.release()
+
+    def change_read_speed(self, delta: float) -> None:
+        s = self.store.settings
+        new = clamp_speed(round(float(s.read_speed) + delta, 1))
+        if new != s.read_speed:
+            s.read_speed = new
+            self.store.save_settings()
+        self.reader.set_speed(new)
+        self.bar.toast(f"Speed {new:.1f}×", 1.2)
 
     def _idle_state(self) -> str:
         return "meeting" if self.meeting else "idle"
@@ -168,6 +236,8 @@ class App:
                 return
             self.recording = True
             self.seg_futures = []
+        if self.reader.active:  # don't dictate over the voice (the mic would hear it)
+            self.reader.stop()
         self.transcriber.preload_async()
         try:
             self.rec.start()
@@ -350,12 +420,13 @@ class App:
         menu = pystray.Menu(
             M(lambda _: "Stop note-taker" if self.meeting else "Start note-taker", lambda: self.toggle_meeting()),
             M("Paste last dictation", lambda: self.on_hotkey("paste_last")),
+            M("Stop reading aloud", lambda: self.reader.stop(), visible=lambda _: self.reader.active),
             M("Open meeting notes folder", self.open_meetings_folder),
             M("Settings…", lambda: self.bar.post(self.open_settings), default=True),
             pystray.Menu.SEPARATOR,
             M("Quit Murmur", lambda: self.bar.post(self.quit)),
         )
-        self.tray = pystray.Icon("Murmur", img, "Murmur — hold Ctrl+Win to dictate", menu)
+        self.tray = pystray.Icon("Murmur", img, "Murmur — hold Ctrl+Win to dictate · Ctrl+Alt+X reads aloud", menu)
         self.tray.run_detached()
 
     def open_meetings_folder(self) -> None:

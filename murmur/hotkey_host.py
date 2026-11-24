@@ -1,6 +1,6 @@
 """Helper process: owns the keyboard hook and prints events to stdout, one per line.
 
-Reads commands from stdin ("reset"); exits when stdin closes (i.e. when Murmur exits).
+Reads commands from stdin ("reset", "copy <vk>"); exits when stdin closes (i.e. when Murmur exits).
 """
 import sys
 import threading
@@ -20,8 +20,14 @@ def main() -> None:
     hook.start()
     emit("ready")
     for line in sys.stdin:
-        if line.strip() == "reset":
+        cmd = line.split()
+        if cmd == ["reset"]:
             hook.reset()
+        elif len(cmd) == 2 and cmd[0] == "copy" and cmd[1].isdigit():
+            try:
+                hook.copy(int(cmd[1]))
+            except Exception:
+                pass
     hook.stop()
 
 

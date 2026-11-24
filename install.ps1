@@ -1,5 +1,5 @@
 # Murmur installer: creates a local Python environment, installs dependencies, downloads the
-# speech models (~650 MB, one time), and optionally adds a Start Menu shortcut.
+# speech and voice models (~750 MB, one time), and optionally adds a Start Menu shortcut.
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1            # install + Start Menu shortcut
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -NoShortcut
@@ -24,6 +24,9 @@ if ($LASTEXITCODE -ne 0) { throw "pip install failed" }
 Write-Host "Downloading speech models (one time, ~650 MB)..."
 & $venvPy -c "from murmur.stt import Transcriber; import numpy as np; t = Transcriber('nemo-parakeet-tdt-0.6b-v2', 'int8', 4, 0); t.ensure_loaded(); t.transcribe_segments(np.zeros(16000, np.float32)); print('models ready')"
 if ($LASTEXITCODE -ne 0) { throw "model download failed" }
+Write-Host "Downloading the read-aloud voice (one time, ~100 MB)..."
+& $venvPy -c "from murmur.config import data_dir; from murmur.tts import Voice; Voice(data_dir()).ensure_loaded(); print('voice ready')"
+if ($LASTEXITCODE -ne 0) { throw "voice download failed" }
 
 if (-not $NoShortcut) {
   $lnk = Join-Path ([Environment]::GetFolderPath("Programs")) "Murmur.lnk"

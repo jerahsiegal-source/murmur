@@ -1,13 +1,14 @@
 # Murmur
 
-Local-first hotkey dictation and meeting notes for Windows. Bring your own AI key.
+Local-first hotkey dictation, meeting notes and read-aloud for Windows. Bring your own AI key.
 
-Murmur does two things:
+Murmur does three things:
 
 1. **Dictation anywhere.** Hold **Ctrl+Win** and talk, then let go, and cleaned-up text is pasted into whatever text box you're in.
 2. **Meeting notes.** Click **Notes** on the small bar at the bottom of your screen, or accept the prompt when a calendar meeting starts. Murmur records your mic and the call audio, transcribes it on your machine, and writes a summary with next steps.
+3. **Read aloud.** Highlight text anywhere and press **Ctrl+Alt+X**. A natural-sounding voice reads it to you, at the speed you choose. It's made for listening to AI replies: file paths are read as just the file name, links as the site name, and markdown symbols aren't read out.
 
-Speech-to-text runs **locally** (NVIDIA Parakeet, on the CPU). **Audio never leaves your computer.** Only the transcribed *text* is sent to the AI model you choose, for cleanup and summaries. Without a key, Murmur still works and uses local cleanup rules.
+Speech-to-text runs **locally** (NVIDIA Parakeet, on the CPU). **Audio never leaves your computer.** Only the transcribed *text* is sent to the AI model you choose, for cleanup and summaries. Without a key, Murmur still works and uses local cleanup rules. Read-aloud is fully local too (the open [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) voice, Apache-2.0, on the CPU): free, and Murmur never sends the text you highlight anywhere. (It's copied through the Windows clipboard for a moment, so if you've turned on Windows clipboard history or cloud clipboard sync, Windows sees it like any other copy.)
 
 ## Hotkeys
 
@@ -18,10 +19,26 @@ Speech-to-text runs **locally** (NVIDIA Parakeet, on the CPU). **Audio never lea
 | **Ctrl+Win** (while hands-free) | Stop and paste |
 | **Alt+Shift+Z** | Paste the last result again (if it didn't land) |
 | Ctrl+Win + any other key | Ignored, so Windows shortcuts like Ctrl+Win+→ still work |
+| **Ctrl+Alt+X** | Read the highlighted text aloud (no need to copy). Press again to stop |
+| **Ctrl+Alt+P** | Pause / resume reading |
+| **Ctrl+Alt+]** / **Ctrl+Alt+[** | Read faster / slower (0.8×–2.0×, remembered) |
 
 Murmur puts your previous clipboard text back after pasting, and asks Windows not to keep dictations in clipboard history.
 
-> If another dictation app (e.g. Wispr Flow) is running with the same hotkey, quit it; otherwise both will react.
+> If another dictation app (e.g. Wispr Flow) is running with the same hotkey, quit it; otherwise both will react. The same goes for another read-aloud tool bound to Ctrl+Alt+X.
+
+## Read aloud
+
+Highlight text in any app (browser, AI chat, Claude, Cursor, Word, a PDF…) and press **Ctrl+Alt+X**. Murmur copies the highlight for you (your clipboard is put back right after), cleans it up for listening and starts speaking in under a second, even for a long reply: the first few words are voiced first, and the rest is prepared while you listen.
+
+**Settings → Read aloud** has the voice (8 voices: US and UK, female and male), a speed slider and a *Hear sample* button. What gets cleaned up:
+
+- `D:\home\me\project\murmur\app.py:42` → "app.py" (Windows, Unix and relative paths, with or without line numbers)
+- `https://www.github.com/org/repo/...` → "github.com"
+- `**bold**`, `# headings`, bullets, table pipes and backticks aren't read; tables are read row by row
+- code blocks inside a reply are announced as "Code block" and skipped (if you highlight only code, it's read)
+
+Pressing Ctrl+Win to dictate stops the reading, so the mic doesn't hear it.
 
 ## Install
 
@@ -33,7 +50,7 @@ cd murmur
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-The installer creates `.venv`, installs dependencies, downloads the speech models once (~650 MB) and adds **Murmur** to the Start Menu. Start it from there. A small pill appears at the bottom-centre of the screen, and a tray icon appears next to the clock.
+The installer creates `.venv`, installs dependencies, downloads the speech and voice models once (~750 MB) and adds **Murmur** to the Start Menu. Start it from there. A small pill appears at the bottom-centre of the screen, and a tray icon appears next to the clock.
 
 ## Set up your AI key (optional, recommended)
 
@@ -90,12 +107,14 @@ Google Calendar → Settings → your calendar → **Secret address in iCal form
 | Meeting audio | inside the meeting folder while recording | deleted as soon as each piece is transcribed |
 | Dictation audio | memory only | never written to disk |
 | API key | Windows Credential Manager | until you remove it |
+| Text you read aloud | memory only (your clipboard is restored right after copying it) | never written to disk |
 
 Network use: only the AI endpoint you configure (text only), the calendar feed if you set one, and a one-time model download from Hugging Face.
 
 ## Resource use (i7-12650H laptop)
 
-- Idle: ~90 MB RAM, ~0% CPU. The speech model unloads after 10 idle minutes (adjustable).
+- Idle: ~90 MB RAM, ~0% CPU, plus the read-aloud voice (below). The speech model unloads after 10 idle minutes (adjustable).
+- Read aloud: the voice model stays loaded (about 200–300 MB) so reading starts in under a second at any time. It loads a few seconds after Murmur starts, so startup isn't slower. First words 0.4–0.8 s after the hotkey; no gaps up to 2.0×.
 - While dictating: the model loads in ~2 s *while you talk*, using ~800 MB RAM until it unloads.
 - Latency: text is pasted 0.2–0.7 s after you release the keys (local rules). Add your AI model's response time, typically 0.3–1 s.
 - Meetings: about 6–15 s of background CPU per 5 minutes of call, at low priority.
@@ -112,4 +131,4 @@ git config core.hooksPath .githooks   # blocks commits that would add a key or p
 
 ## License
 
-MIT
+MIT. Read-aloud uses the Kokoro voice model (Apache-2.0) through [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) (MIT), which installs [espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0) for pronunciation; it is downloaded as a separate package, not bundled in this repo.

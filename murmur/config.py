@@ -68,6 +68,10 @@ class Settings:
     calendar_ics_url: str = ""
     calendar_prompt_min_before: float = 1.0
 
+    # Read aloud (local Kokoro voice)
+    read_voice: str = "af_heart"
+    read_speed: float = 1.3
+
     # UI
     show_bar: bool = True
 

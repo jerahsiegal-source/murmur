@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "murmur-dictation"
 version = "0.1.0"
-description = "Local-first hotkey dictation and meeting notes for Windows. Bring your own API key."
+description = "Local-first hotkey dictation, meeting notes and read-aloud for Windows. Bring your own API key."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -23,6 +23,7 @@ dependencies = [
   "keyring>=24",
   "icalendar>=5",
   "recurring-ical-events>=3",
+  "kokoro-onnx>=0.6.1,<0.7",
 ]
 
 [project.optional-dependencies]

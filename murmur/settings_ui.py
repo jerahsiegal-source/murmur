@@ -151,6 +151,31 @@ class SettingsWindow:
         self.hlist.bind("<<ListboxSelect>>", self._hist_select)
         ttk.Button(f, text="Copy cleaned text", command=self._hist_copy).pack(anchor="w")
 
+        # ---------------- Read aloud
+        from .tts import SPEED_MAX, SPEED_MIN, VOICES
+
+        f = ttk.Frame(nb, padding=12)
+        nb.add(f, text="Read aloud")
+        ttk.Label(f, text="Highlight text anywhere and press Ctrl+Alt+X. The voice runs on this PC: free, and Murmur "
+                          "never sends what you highlight anywhere.", wraplength=560).grid(
+            row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+        self.voice_var = tk.StringVar(value=VOICES.get(s.read_voice, VOICES["af_heart"]))
+        self._row(f, 1, "Voice", ttk.Combobox(f, textvariable=self.voice_var, values=list(VOICES.values()),
+                                              state="readonly", width=30))
+        self.speed_var = tk.DoubleVar(value=float(s.read_speed))
+        self._speed_shown = round(float(s.read_speed), 1)  # Ctrl+Alt+]/[ may change it while open
+        sp = ttk.Frame(f)
+        speed_lbl = ttk.Label(sp, text=f"{float(s.read_speed):.1f}×", width=5)
+        ttk.Scale(sp, from_=SPEED_MIN, to=SPEED_MAX, variable=self.speed_var, length=260,
+                  command=lambda v: speed_lbl.config(text=f"{round(float(v), 1):.1f}×")).pack(side="left")
+        speed_lbl.pack(side="left", padx=6)
+        self._row(f, 2, "Speed", sp)
+        ttk.Button(f, text="Hear sample", command=self._read_sample).grid(row=3, column=1, sticky="w", pady=6)
+        ttk.Label(f, text=("Keys: Ctrl+Alt+X read the highlight (again: stop) · Ctrl+Alt+P pause / resume · "
+                           "Ctrl+Alt+] faster · Ctrl+Alt+[ slower. File paths are read as just the file name, "
+                           "links as the site name."), wraplength=560, foreground="#444").grid(
+            row=4, column=0, columnspan=3, sticky="w", pady=(16, 0))
+
         # ---------------- General
         f = ttk.Frame(nb, padding=12)
         nb.add(f, text="General")
@@ -164,7 +189,7 @@ class SettingsWindow:
         self._entry(f, 4, "Unload speech model after idle (min)", "stt_idle_unload_min", s.stt_idle_unload_min,
                     kind=tk.DoubleVar, width=8, hint="0 = keep loaded")
         ttk.Label(f, text=("Hotkeys: hold Ctrl+Win to dictate · Ctrl+Win then Space for hands-free · "
-                           "Ctrl+Win to stop · Alt+Shift+Z pastes the last result"), wraplength=560,
+                           "Ctrl+Win to stop · Alt+Shift+Z pastes the last result · Ctrl+Alt+X reads the highlight aloud"), wraplength=560,
                   foreground="#444").grid(row=6, column=0, columnspan=3, sticky="w", pady=(16, 0))
 
         bottom = ttk.Frame(self.win)
@@ -227,6 +252,7 @@ class SettingsWindow:
             messagebox.showerror("Murmur", f"Invalid value: {e}", parent=self.win)
             return
         s.retention_days = max(1, int(s.retention_days))
+        self._apply_read_settings()
         if self.vars.get("retention_days") is not None:
             self.vars["retention_days"].set(s.retention_days)
         s.llm_provider = self.provider
@@ -248,6 +274,25 @@ class SettingsWindow:
             self.app.bar.win.withdraw()
         self.app.reload_settings()
         self.win.title("Murmur settings — saved")
+
+    def _apply_read_settings(self) -> None:
+        from .tts import VOICES, clamp_speed
+
+        s = self.store.settings
+        by_label = {v: k for k, v in VOICES.items()}
+        s.read_voice = by_label.get(self.voice_var.get(), s.read_voice)
+        slider = round(float(self.speed_var.get()), 1)
+        if slider != self._speed_shown:  # only a slider move overrides a hotkey change made meanwhile
+            s.read_speed = clamp_speed(slider)
+        self._speed_shown = round(float(s.read_speed), 1)
+        self.speed_var.set(s.read_speed)
+        self.app.reader.set_speed(s.read_speed)
+
+    def _read_sample(self) -> None:
+        self._apply_read_settings()
+        self.store.save_settings()
+        self.app.reader.speak("This is how I'll sound when I read to you. Highlight any text, "
+                              "press Control Alt X, and I'll read it aloud.")
 
     def _test_llm(self) -> None:
         from .cleanup import SYSTEM_PROMPT
