@@ -6,6 +6,12 @@
 
 Local-first hotkey dictation, meeting notes and read-aloud for Windows. Bring your own AI key.
 
+## See it in action
+
+A 50-second walkthrough: dictating into any app, having text read aloud, and adding your own AI key.
+
+<!-- Demo video goes here. On github.com, edit this file and drag video/out/yappr-demo.mp4 onto this line: GitHub uploads it and inserts a link that plays on the page. -->
+
 Yappr does three things:
 
 1. **Dictation anywhere.** Hold **Ctrl+Win** and talk, then let go, and cleaned-up text is pasted into whatever text box you're in.
