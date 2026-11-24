@@ -158,6 +158,7 @@ class Settings:
 
     # UI
     show_bar: bool = True
+    bar_position: list = field(default_factory=list)  # [] = bottom centre; else [centre x, bottom y] as screen fractions
 
 
 class Store:
@@ -219,6 +220,14 @@ class Store:
             tmp = self.dictionary_path.with_suffix(".tmp")
             tmp.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
             tmp.replace(self.dictionary_path)
+
+    # ---- first run
+    def onboarded(self) -> bool:
+        """True once the welcome is done, or for anyone who already used Yappr (or Murmur) before it existed."""
+        return (self.root / ".onboarded").exists() or (self.root / "history.jsonl").exists()
+
+    def set_onboarded(self) -> None:
+        (self.root / ".onboarded").write_text("Welcome finished.\n", encoding="utf-8")
 
     # ---- secrets
     @staticmethod

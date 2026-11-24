@@ -69,6 +69,11 @@ class CalendarWatcher:
     def stop(self) -> None:
         self._stop.set()
 
+    def next_event(self, now: datetime | None = None) -> dict | None:
+        """The next meeting that hasn't started more than 5 minutes ago, from the last fetch (no network)."""
+        now = now or datetime.now(timezone.utc)
+        return next((e for e in self._events if e["start"] + timedelta(minutes=5) >= now), None)
+
     def refresh_now(self) -> None:
         self._last_fetch = 0.0
 

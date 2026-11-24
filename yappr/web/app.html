@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Yappr</title>
+<style>/*CSS*/</style>
+</head>
+<body data-start="{{PAGE}}">
+<div class="app" id="app">
+  <nav class="rail" aria-label="Yappr">
+    <img class="logo" src="{{SKIP}}" alt="Yappr">
+    <button class="nav" data-page="today" aria-label="Today"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg><span>Today</span></button>
+    <button class="nav" data-page="notes" aria-label="Notes"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/></svg><span>Notes</span></button>
+    <button class="nav" data-page="words" aria-label="My words"><svg viewBox="0 0 24 24"><path d="M5 4h10a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M9 9h5M9 13h4"/></svg><span>My words</span></button>
+    <button class="nav bottom" data-page="settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Settings</span></button>
+  </nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+<div id="welcome" class="welcome" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>window.SKIP = "{{SKIP}}";</script>
+<script>/*JS*/</script>
+</body>
+</html>

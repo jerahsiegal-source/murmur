@@ -24,6 +24,7 @@ dependencies = [
   "icalendar>=5",
   "recurring-ical-events>=3",
   "kokoro-onnx>=0.6.1,<0.7",
+  "pywebview>=6,<7",  # the Yappr window (uses the Edge WebView2 that comes with Windows)
 ]
 
 [project.optional-dependencies]
@@ -33,10 +34,11 @@ dev = ["pytest", "psutil"]
 yappr = "yappr.app:main"
 
 [tool.setuptools]
-packages = ["yappr", "yappr.assets"]
+packages = ["yappr", "yappr.assets", "yappr.web"]
 
 [tool.setuptools.package-data]
-"yappr.assets" = ["*.ico", "*.png"]
+"yappr.assets" = ["*.ico", "*.png", "*.svg"]
+"yappr.web" = ["*.html", "*.css", "*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
