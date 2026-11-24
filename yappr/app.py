@@ -14,6 +14,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from . import storage
+from .api import Api, Server
 from .audio import MicRecorder
 from .calendar_watch import CalendarWatcher
 from .cleanup import Cleaner
@@ -59,7 +60,10 @@ class App:
         self.llm = self._make_llm()
         self.cleaner = Cleaner(self.llm, store)
         self.transcriber = Transcriber(s.stt_model, s.stt_quantization, s.stt_threads, s.stt_idle_unload_min)
-        self.bar = Bar(root, on_notes=self.toggle_meeting, on_stop_dictation=self.stop_handsfree, on_settings=self.open_settings)
+        self.bar = Bar(root, on_notes=self.toggle_meeting, on_stop_dictation=self.stop_handsfree,
+                       on_settings=self.open_window, next_meeting=self._next_meeting,
+                       position=tuple(s.bar_position) if len(s.bar_position) == 2 else None,
+                       on_moved=self._bar_moved, on_hide=lambda: self.set_bar_visible(False))
         # phrases are only split off once a dictation is longer than the one-pass limit
         self.rec = MicRecorder(on_level=self.bar.set_level, on_segment=self._segment, device=s.mic_device or None,
                                segment_min_s=self.WHOLE_PASS_MAX_S)
@@ -86,7 +90,9 @@ class App:
                              busy=lambda: self.recording or self.meeting is not None)
         self.read_lock = threading.Lock()
         self.tray = None
-        self.settings_win = None
+        self.window_proc = None  # the Yappr window (its own process, only while open)
+        self.window_page = ""  # a page asked for (tray, bar) while the window was already open
+        self.api_server = Server(Api(self))
 
     def _make_llm(self) -> LLMClient:
         s = self.store.settings
@@ -103,6 +109,7 @@ class App:
 
     # ------------------------------------------------------------ lifecycle
     def start(self) -> None:
+        self.api_server.start()
         self.hook.start()
         self.calendar.start()
         threading.Thread(target=self._housekeeping, name="housekeeping", daemon=True).start()
@@ -110,6 +117,8 @@ class App:
         if not self.store.settings.show_bar:
             self.bar.win.withdraw()
         self.root.after(3000, self.voice.preload_async)  # after startup, so it never slows it down
+        if not self.store.onboarded():
+            self.root.after(600, lambda: self.open_window("welcome"))  # first run: say hello
         log.info("Yappr started")
 
     def quit(self) -> None:
@@ -128,6 +137,7 @@ class App:
                 m.stop()
                 m.wait(600)
             self.reader.stop()
+            self.close_window()
             self.hook.stop()
             if self.tray is not None:
                 self.tray.stop()
@@ -310,9 +320,12 @@ class App:
             log.info("dictation %.1fs audio -> ready in %.2fs (stt %.2fs, %s)", audio_s, t_ready - t_stop, t_stt - t_stop, how)
             if not ok:
                 self.bar.toast("Couldn't paste — press Alt+Shift+Z")
+            else:
+                n = len(text.split())
+                self.bar.toast(f"✓ Pasted {n} word{'s' if n != 1 else ''}", 1.6)
         except Exception:
             log.exception("dictation failed")
-            self.bar.toast("Something went wrong")
+            self.bar.toast("Something went wrong. Please try again")
         finally:
             with self.lock:
                 self.pending -= 1
@@ -348,16 +361,24 @@ class App:
                 m.stop()
                 if not self.recording:
                     self.bar.set_state("idle")
-                self.bar.toast("Transcribing the rest…", 4)
+                self.bar.toast("Finishing your notes…", 4)
                 return
             s = self.store.settings
             try:
+                fake = getenv("YAPPR_FAKE_MEETING")  # end-to-end tests: a recorded call instead of the devices
+                factory = None
+                if fake:
+                    from .meeting import FileCapture
+
+                    speed = float(getenv("YAPPR_FAKE_MEETING_SPEED") or 1)
+                    factory = lambda mic, sys_: FileCapture(mic, sys_, Path(fake), speed)  # noqa: E731
                 m = MeetingSession(Path(s.meetings_dir), title or "Meeting", self.transcriber, self.llm, s,
-                                   on_status=self._meeting_status, dictionary=lambda: self.store.dictionary)
+                                   on_status=self._meeting_status, dictionary=lambda: self.store.dictionary,
+                                   capture_factory=factory)
                 m.start()
-            except Exception as e:
+            except Exception:
                 log.exception("meeting start failed")
-                self.bar.toast(f"Couldn't start recording: {e}"[:60], 4)
+                self.bar.toast("Couldn't start recording. Check your microphone.", 4)
                 return
             with self.meeting_lock:
                 self.meeting = m
@@ -382,13 +403,13 @@ class App:
 
     def _meeting_status(self, status: str) -> None:
         if status == "summarizing":
-            self.bar.toast("Writing summary…", 6)
+            self.bar.toast("Writing your meeting notes…", 6)
         elif status == "done":
-            self.bar.toast("Meeting notes saved", 4)
+            self.bar.toast("✓ Meeting notes ready. Open Yappr to read them", 4)
         elif status == "error":
-            self.bar.toast("Meeting notes failed — see log", 5)
+            self.bar.toast("Couldn't finish the notes. Try again in Yappr → Notes", 5)
         elif status == "device-error":
-            self.bar.toast("Audio device changed — couldn't follow it", 6)
+            self.bar.toast("Your speakers or mic changed, and Yappr couldn't follow", 6)
 
     def finished_meeting_dirs(self) -> list[Path]:
         d = Path(self.store.settings.meetings_dir)
@@ -418,15 +439,19 @@ class App:
             img = Image.new("RGBA", (64, 64), (255, 233, 168, 255))
         M = pystray.MenuItem
         menu = pystray.Menu(
-            M(lambda _: "Stop note-taker" if self.meeting else "Start note-taker", lambda: self.toggle_meeting()),
+            M("Open Yappr", lambda: self.bar.post(self.open_window), default=True),
+            M(lambda _: "Stop meeting notes" if self.meeting else "Take meeting notes", lambda: self.toggle_meeting()),
             M("Paste last dictation", lambda: self.on_hotkey("paste_last")),
+            M(lambda _: "Hide the bar" if self.store.settings.show_bar else "Show the bar",
+              lambda: self.set_bar_visible(not self.store.settings.show_bar)),
             M("Stop reading aloud", lambda: self.reader.stop(), visible=lambda _: self.reader.active),
-            M("Open meeting notes folder", self.open_meetings_folder),
-            M("Settings…", lambda: self.bar.post(self.open_settings), default=True),
+            pystray.Menu.SEPARATOR,
+            M("Meeting notes", lambda: self.bar.post(lambda: self.open_window("notes"))),
+            M("Settings", lambda: self.bar.post(lambda: self.open_window("settings"))),
             pystray.Menu.SEPARATOR,
             M("Quit Yappr", lambda: self.bar.post(self.quit)),
         )
-        self.tray = pystray.Icon("Yappr", img, "Yappr — hold Ctrl+Win to dictate · Ctrl+Alt+X reads aloud", menu)
+        self.tray = pystray.Icon("Yappr", img, "Yappr: hold Ctrl+Win to talk", menu)
         self.tray.run_detached()
 
     def open_meetings_folder(self) -> None:
@@ -434,13 +459,73 @@ class App:
         p.mkdir(parents=True, exist_ok=True)
         os.startfile(p)
 
-    def open_settings(self) -> None:
-        from .settings_ui import SettingsWindow
+    def _bar_moved(self, pos) -> None:
+        self.store.settings.bar_position = list(pos) if pos else []
+        self.store.save_settings()
 
-        if self.settings_win is not None and self.settings_win.alive():
-            self.settings_win.focus()
+    def set_bar_visible(self, on: bool) -> None:
+        """Show or hide the floating bar (hotkeys keep working either way) and remember the choice."""
+        self.store.settings.show_bar = on
+        self.store.save_settings()
+        self.bar.post(self.bar.win.deiconify if on else self.bar.win.withdraw)
+
+    def _next_meeting(self) -> dict | None:
+        from datetime import datetime, timezone
+
+        ev = self.calendar.next_event()
+        if ev is None or self.meeting is not None:
+            return None
+        return {"title": ev["title"], "in_min": int((ev["start"] - datetime.now(timezone.utc)).total_seconds() // 60)}
+
+    def open_settings(self) -> None:
+        self.open_window("settings")
+
+    def open_window(self, page: str = "") -> None:
+        """Show the Yappr window (Today, Notes, My words, Settings, or the welcome)."""
+        p = self.window_proc
+        if p is not None and p.poll() is None:
+            if page:  # only a specific request moves an open window; "Open Yappr" just brings it forward
+                self.window_page = page  # picked up by the page (Api.take_page)
+            focus_process_window(p.pid)
             return
-        self.settings_win = SettingsWindow(self.root, self)
+        self.window_page = ""  # a request left over from a window that has since closed
+        page = page or "today"
+        env = dict(os.environ, YAPPR_WINDOW_PIPE=self.api_server.address, YAPPR_WINDOW_KEY=self.api_server.key.hex())
+        exe = Path(sys.executable)
+        exe = exe.with_name("pythonw.exe") if exe.name.lower() == "python.exe" and exe.with_name("pythonw.exe").exists() else exe
+        try:
+            self.window_proc = subprocess.Popen([str(exe), "-m", "yappr.window", page], env=env,
+                                                cwd=str(Path(__file__).resolve().parents[1]), stdin=subprocess.DEVNULL)
+            log.info("window opened (%s)", page)
+        except Exception:
+            log.exception("could not open the window")
+            self.bar.toast("Couldn't open Yappr. Try again from the tray icon", 4)
+
+    def close_window(self) -> None:
+        p = self.window_proc
+        if p is not None and p.poll() is None:
+            p.terminate()
+
+
+def focus_process_window(pid: int) -> None:
+    """Bring the visible top-level window of process `pid` to the front (restoring it if minimised)."""
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32")
+    found = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def each(hwnd, _):
+        owner = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
+        if owner.value == pid and user32.IsWindowVisible(hwnd) and user32.GetWindowTextLengthW(hwnd):
+            found.append(hwnd)
+        return True
+
+    user32.EnumWindows(each, 0)
+    for hwnd in found[:1]:
+        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+        user32.SetForegroundWindow(hwnd)
 
 
 def main() -> None:

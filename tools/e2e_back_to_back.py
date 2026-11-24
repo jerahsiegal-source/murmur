@@ -1,7 +1,7 @@
 """Two dictations back to back (the second starts right after the first is released), plus a check
 that a non-text clipboard item survives. Needs the app running with YAPPR_FAKE_MIC set.
 
-Usage: python tools/e2e_back_to_back.py <wav seconds>
+Usage: python tools/e2e_back_to_back.py <wav seconds> [word the clip contains, default Priya]
 """
 import ctypes
 import json
@@ -17,6 +17,7 @@ from e2e_dictation import VK_LCONTROL, VK_LWIN, key, user32  # noqa: E402
 from yappr import paste  # noqa: E402
 
 secs = float(sys.argv[1])
+expect = sys.argv[2] if len(sys.argv) > 2 else "Priya"  # a word the fake-mic clip says once
 
 # put a custom (non-text) item on the clipboard, like a copied image would be
 fmt = paste.user32.RegisterClipboardFormatW("Yappr Test Binary")
@@ -55,13 +56,13 @@ for _ in range(200):
     time.sleep(0.05)
     try:
         text = json.load(open(out))["text"]
-        if text.count("Priya") >= 2:
+        if text.count(expect) >= 2:
             break
     except Exception:
         pass
 time.sleep(1.5)  # let the clipboard restore run
 proc.terminate()
 snap = dict(paste.snapshot_clipboard() or [])
-print("RESULT dictations pasted:", text.count("Priya"), "/ 2")
+print("RESULT dictations pasted:", text.count(expect), "/ 2")
 print("TEXT:", text)
 print("RESULT non-text clipboard item restored:", snap.get(fmt, b"")[:len(marker)] == marker)

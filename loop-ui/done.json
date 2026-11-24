@@ -1,0 +1,65 @@
+[
+ {
+  "id": "D1",
+  "item": "Look chosen first. Design directions are shown with `/explore`, using the existing Yappr name, logo and colours (`branding/`). The owner picks one, and it is written down as the fixed design (e.g. `DESIGN.md`) before the build starts.",
+  "check": "the owner's pick, recorded",
+  "kind": "judgment",
+  "status": "pass",
+  "attempts": 0,
+  "evidence": "Owner pick 2026-11-24 recorded in DESIGN.md (commit f76cf07)"
+ },
+ {
+  "id": "D2",
+  "item": "Every visible surface uses the chosen design: pill, tray icon and menu, Settings (all of AI cleanup, Dictionary, Meetings, History, General), meeting prompt, notes/history views, read-aloud UI, installer and first launch.",
+  "check": "before and after screenshots of every surface, in light and dark mode, signed off by the owner",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Owner signed off 2026-11-24 on loop-ui/review.html (before/after of every surface, light + dark). Font: Segoe UI Variable (owner decision)."
+ },
+ {
+  "id": "D3",
+  "item": "First-run setup exists. On a fresh install, a new person is guided to do their first dictation (Ctrl+Win) and, if they want, add an AI key. Both take about 2 minutes, guided only by the app.",
+  "check": "a timed walkthrough on a clean profile in the real app, with screenshots",
+  "kind": "user-facing",
+  "status": "blocked",
+  "attempts": 1,
+  "evidence": "Scripted walkthrough on a brand-new profile in the real app passes (tools/e2e_first_run.py; screens loop-ui/shots/first-run-1..6.png): welcome opens 0.6 s after start, first dictation lands in the practice box (0.38 s after release), AI helper added inside the welcome, Today checklist 2/3, next dictation tidied by AI. Waiting on: the owner's timed run by hand with Ctrl+Win and a real Claude key, since 'about 2 minutes, guided only by the app' needs a person (reviewer F4)."
+ },
+ {
+  "id": "D4",
+  "item": "No jargon on screen. Terms like STT, base URL, tokens or provider never appear without a plain-language explanation.",
+  "check": "a review of every on-screen string, with each term listed and how it is handled",
+  "kind": "judgment",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "loop-ui/jargon-review.md: 224 window strings (loop-ui/strings-window.txt) + bar, prompt, tray, toasts, installer reviewed; each listed term is absent or explained; 9 bar messages and installer failure text reworded (commit 'D4: plain wording…')."
+ },
+ {
+  "id": "D5",
+  "item": "End-to-end: fresh install -> first run -> dictation pastes -> a meeting is recorded and its notes are shown -> read-aloud works, all in the redesigned UI.",
+  "check": "a run in the real app, with screenshots",
+  "kind": "user-facing",
+  "status": "blocked",
+  "attempts": 1,
+  "evidence": "From a brand-new profile everything passes in the real app (tools/e2e_first_run.py --full): first run, dictation pasted into another app (0.31 s), meeting recorded from Today and its notes shown in Notes, read-aloud (first sound 0.82 s, stop silent). Waiting on: the 'fresh install' part, i.e. install.ps1 on a clean machine (not run here: it would reinstall into the owner's environment and download ~750 MB) (reviewer F3)."
+ },
+ {
+  "id": "D6",
+  "item": "No regressions: dictation, hands-free, Alt+Shift+Z re-paste, meetings, read-aloud, dictionary and history all behave as before.",
+  "check": "The existing test suite passes, and the `tools/e2e_*` scripts pass.",
+  "kind": "regression",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "pytest 142 passed (121 before + 21 new). e2e on new code (fake mic, Ctrl+Shift chord): hold paste OK; hands-free paste OK; Alt+Shift+Z re-paste OK, no literal Z; back-to-back 2/2 pasted + non-text clipboard restored (same as base: 2/2, restored; the script's 'Priya' counter matches no current clip, so judged by the sentence appearing twice); read-aloud first sound 0.82 s, no gaps, stop silent, clipboard restored; meeting record -> notes (D5); dictionary via My words + tests; history in Notes -> Dictations. One cancelled run traced to a key press during the hold ('hotkey cancel', same handling as base). After review: e2e_back_to_back.py takes the clip's word as an argument (default unchanged); with names.wav + 'invoice': 1/2 on the first try (log: 'hotkey cancel' 24 ms after start, a stray key), then 2/2 and 2/2."
+ },
+ {
+  "id": "D7",
+  "item": "Not slower: hotkey -> paste latency, startup time and idle memory are no worse than before.",
+  "check": "numbers measured before and after",
+  "kind": "regression",
+  "status": "pass",
+  "attempts": 2,
+  "evidence": "Same profile, clip (30 s), scripts as baseline. Startup launch->'Yappr started': base 1.35/1.94/1.72 s, new 1.18/0.98/1.24/1.09 s. Idle memory at 15-20 s: base 250 MB WS / 240 private, new 250-251 / 239-240. Stop->paste: base 0.79 0.76 0.70 0.78 0.60 0.65 0.59 0.59 (median 0.68); new after the bar fix 0.73 0.89 0.73 0.68 0.66 (median 0.73), ranges overlap. Before the fix new was median 0.85: the bar re-measured text with new font objects every 60 ms during 'processing'; now cached + 250 ms. Window open: ~237 MB private (python 64 + WebView2), all freed on close (verified), so idle is unchanged."
+ }
+]

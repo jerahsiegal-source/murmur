@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yappr UI — five directions</title>
+<style>
+/* ---------- Page tokens (the comparison page itself, not a direction) ---------- */
+:root{
+  --butter:#ffe9a8; --cream:#fbf8f3; --bark:#5a3524; --ink2:#2a1810; --tan:#d9a46c; --fawn:#e8c39a; --rose:#ef8a9a; --clay:#c98b6b;
+  --bg:#f6f2ea; --surface:#fffdf9; --ink:#2a1810; --muted:#6b574b; --line:#e6ddd0; --focus:#1f6fd6;
+  --font:"Atkinson Hyperlegible","Lexend","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --display:"Lexend","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --mono:"Cascadia Mono","Consolas",monospace;
+}
+[data-theme=dark]{ --bg:#17110e; --surface:#211915; --ink:#f4ebe0; --muted:#bba897; --line:#3a2d25; --focus:#7fb2ff; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--font);}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1200px;margin:0 auto;padding:28px 20px 80px}
+header.top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header.top img{width:56px;height:56px}
+header.top h1{font:600 28px/1.2 var(--display);margin:0}
+header.top p{margin:2px 0 0;color:var(--muted);max-width:70ch}
+.tools{margin-left:auto;display:flex;gap:8px}
+.btn{font:600 15px var(--font);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 16px;cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--muted)}
+.fixed{margin:18px 0 22px;color:var(--muted);font-size:15px}
+.fixed b{color:var(--ink)}
+
+/* Direction picker */
+.picker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pick{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-height:40px}
+.pick:hover{border-color:var(--muted)}
+.pick[aria-selected=true]{border:2px solid var(--ink);padding:11px 13px}
+.pick:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.pick .k{font:700 13px var(--mono);color:var(--muted)}
+.pick .n{font:600 18px/1.25 var(--display)}
+.pick .i{font-size:14px;color:var(--muted);line-height:1.4}
+.swatch{height:30px;border-radius:8px;margin-bottom:4px;display:flex;overflow:hidden}
+.swatch span{flex:1}
+@media (max-width:900px){.picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Direction panel */
+.panel{margin-top:22px}
+.panel[hidden]{display:none}
+.meta{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:18px;margin-bottom:18px}
+.meta h2{font:600 26px/1.2 var(--display);margin:0 0 4px}
+.meta p{margin:0;max-width:62ch}
+.meta .lbl{font:700 13px var(--font);letter-spacing:.04em;color:var(--muted)}
+.tag{display:inline-block;font:700 13px var(--font);padding:2px 10px;border-radius:999px;background:var(--butter);color:var(--bark);margin-bottom:6px}
+@media (max-width:900px){.meta{grid-template-columns:1fr}}
+.stage-label{font:700 14px var(--font);color:var(--muted);margin:22px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stage{overflow-x:auto;padding:4px 2px 10px}
+.desk{border-radius:16px;padding:28px;min-width:max-content;background:linear-gradient(160deg,#cfd8e3,#a9b6c6)}
+[data-theme=dark] .desk{background:linear-gradient(160deg,#28303a,#151a20)}
+.row{display:flex;gap:22px;align-items:flex-start;flex-wrap:nowrap}
+.small{font-size:14px;color:var(--muted)}
+
+/* Steal + research */
+section.block{margin-top:44px}
+section.block h2{font:600 24px var(--display);margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:15px;cursor:pointer;min-height:40px}
+.chip input{width:18px;height:18px;accent-color:var(--bark)}
+.chip:has(input:checked){border:2px solid var(--ink);padding:7px 13px;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:15px;background:var(--surface);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+
+/* ========== Shared mock helpers ========== */
+.win{width:820px;border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--wfont,var(--font))}
+.tb{height:38px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px}
+.tb img{width:18px;height:18px}
+.tb .x{margin-left:auto;letter-spacing:18px;opacity:.7}
+.kbd{display:inline-block;font:700 14px var(--mono);padding:2px 8px;border-radius:6px;border:1px solid currentColor;border-bottom-width:3px;line-height:1.4}
+.wave{display:inline-flex;gap:3px;align-items:center;height:20px}
+.wave i{display:block;width:3px;border-radius:2px;background:currentColor;animation:w 1s ease-in-out infinite}
+.wave i:nth-child(1){height:6px;animation-delay:-.2s}.wave i:nth-child(2){height:14px;animation-delay:-.5s}.wave i:nth-child(3){height:20px}.wave i:nth-child(4){height:10px;animation-delay:-.7s}.wave i:nth-child(5){height:16px;animation-delay:-.3s}.wave i:nth-child(6){height:7px;animation-delay:-.6s}
+@keyframes w{50%{transform:scaleY(.4)}}
+@media (prefers-reduced-motion:reduce){.wave i,.bounce{animation:none!important}}
+.toggle{width:44px;height:24px;border-radius:999px;position:relative;display:inline-block;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.toggle.on::after{left:23px}
+.pillset{display:flex;gap:18px;align-items:center;flex-wrap:nowrap}
+.demo{font:600 14px var(--font);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;min-height:36px}
+
+/* ================= A: Windows Native ================= */
+.dA{--a-bg:#f7f3ee;--a-side:#efe8df;--a-card:#fffdfa;--a-ink:#2a1810;--a-muted:#6b574b;--a-line:#e4d9cc;--a-acc:#5a3524;--a-accInk:#fff;--a-hi:#ffe9a8;--wfont:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+[data-theme=dark] .dA{--a-bg:#201814;--a-side:#1a1310;--a-card:#2a201b;--a-ink:#f4ebe0;--a-muted:#bba897;--a-line:#3d2f27;--a-acc:#ffe9a8;--a-accInk:#2a1810;--a-hi:#4a3a1c}
+.dA .win{background:var(--a-bg);color:var(--a-ink)}
+.dA .tb{background:var(--a-side)}
+.dA .body{display:grid;grid-template-columns:220px 1fr;min-height:470px}
+.dA nav{background:var(--a-side);padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.dA nav a{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:15px}
+.dA nav a.on{background:var(--a-card);font-weight:600;box-shadow:inset 3px 0 0 var(--a-acc)}
+.dA nav svg{width:18px;height:18px;flex:none}
+.dA main{padding:22px 26px}
+.dA h3{font:600 24px var(--wfont);margin:0 0 14px}
+.dA .grp{font:600 14px var(--wfont);color:var(--a-muted);margin:16px 0 6px}
+.dA .set{background:var(--a-card);border:1px solid var(--a-line);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.dA .set .t{flex:1}
+.dA .set .t b{display:block;font-weight:600;font-size:15px}
+.dA .set .t span{font-size:14px;color:var(--a-muted)}
+.dA .sel{border:1px solid var(--a-line);border-radius:6px;padding:6px 10px;min-width:200px;font-size:15px;background:var(--a-bg)}
+.dA .toggle{background:var(--a-acc)}.dA .toggle::after{background:var(--a-accInk)}
+.dA .pbtn{background:var(--a-acc);color:var(--a-accInk);border-radius:6px;padding:7px 14px;font-weight:600;font-size:15px}
+.dA .ok{color:#2e7d4f;font-weight:600;font-size:14px}
+[data-theme=dark] .dA .ok{color:#7fd3a0}
+.dA .pill{height:44px;border-radius:999px;background:#2a1810;color:#fbf8f3;display:flex;align-items:center;gap:10px;padding:0 8px 0 6px;font:500 15px var(--wfont);box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.dA .pill img{width:32px;height:32px;border-radius:50%}
+.dA .pill .notes{background:#ffe9a8;color:#2a1810;border-radius:999px;padding:5px 12px;font-weight:600}
+.dA .pill .rec{display:inline-flex;align-items:center;gap:6px}
+.dA .pill .dot{width:10px;height:10px;border-radius:50%;background:#ff6b6b}
+.dA .fr{width:460px;background:var(--a-card);color:var(--a-ink);border-radius:12px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--wfont)}
+.dA .steps{display:flex;gap:6px;margin-bottom:16px}.dA .steps i{height:4px;flex:1;border-radius:2px;background:var(--a-line)}.dA .steps i.on{background:var(--a-acc)}
+
+/* ================= B: Skip leads (bold) ================= */
+.dB{--b-bg:#ffe9a8;--b-card:#fffaf0;--b-ink:#2a1810;--b-muted:#6b4a35;--b-acc:#5a3524;--b-rose:#ef8a9a;--wfont:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif}
+[data-theme=dark] .dB{--b-bg:#3a2a12;--b-card:#2a1f14;--b-ink:#fff4d6;--b-muted:#e0c79a;--b-acc:#ffe9a8}
+.dB .win{background:var(--b-bg);color:var(--b-ink);border-radius:26px}
+.dB .tb{background:transparent;font-weight:700}
+.dB .body{display:grid;grid-template-columns:250px 1fr;min-height:480px}
+.dB .hero{padding:10px 22px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.dB .hero img{width:150px;height:150px;filter:drop-shadow(0 10px 0 rgba(90,53,36,.15))}
+.dB .hero .say{background:var(--b-card);border-radius:20px;padding:12px 16px;font-size:16px;position:relative;font-weight:600}
+.dB .hero .say::before{content:"";position:absolute;top:-10px;left:50%;margin-left:-10px;border:10px solid transparent;border-top:0;border-bottom-color:var(--b-card)}
+.dB .tabs{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:10px}
+.dB .tabs a{display:block;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:700;font-size:16px;text-align:left}
+.dB .tabs a.on{background:var(--b-acc);color:var(--b-bg)}
+.dB main{background:var(--b-card);margin:0 14px 14px 0;border-radius:22px;padding:24px 28px}
+.dB h3{font:800 30px/1.15 var(--wfont);margin:0 0 6px}
+.dB .lede{color:var(--b-muted);margin:0 0 18px;font-size:16px}
+.dB .big{display:flex;align-items:center;gap:16px;padding:16px 0;border-top:2px dashed rgba(90,53,36,.18)}
+[data-theme=dark] .dB .big{border-color:rgba(255,233,168,.18)}
+.dB .big .t{flex:1}.dB .big b{font-size:18px;display:block}.dB .big span{color:var(--b-muted);font-size:15px}
+.dB .toggle{width:56px;height:32px;background:var(--b-acc)}.dB .toggle::after{width:24px;height:24px;top:4px;left:4px;background:var(--b-bg)}.dB .toggle.on::after{left:28px}
+.dB .chunk,.dB .big .chunk{background:var(--b-acc);color:var(--b-bg);font-weight:800;border-radius:999px;padding:10px 20px;font-size:16px;display:inline-block}
+.dB .pill{height:56px;border-radius:999px;background:#ffe9a8;color:#2a1810;display:flex;align-items:center;gap:10px;padding:0 18px 0 4px;font:800 16px var(--wfont);box-shadow:0 6px 0 #5a3524,0 10px 24px rgba(0,0,0,.25);border:2px solid #5a3524}
+.dB .pill img{width:48px;height:48px}
+.dB .pill .bounce{animation:bb .6s ease-in-out infinite alternate}
+@keyframes bb{to{transform:translateY(-3px) rotate(-4deg)}}
+.dB .pill .rec{background:#ef8a9a;border-radius:999px;padding:4px 10px;color:#2a1810}
+.dB .fr{width:470px;background:var(--b-bg);color:var(--b-ink);border-radius:26px;padding:24px;box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--wfont)}
+.dB .chat{display:flex;flex-direction:column;gap:10px}
+.dB .bub{background:var(--b-card);border-radius:18px 18px 18px 4px;padding:12px 16px;max-width:85%;font-size:16px}
+.dB .bub.me{align-self:flex-end;background:var(--b-acc);color:var(--b-bg);border-radius:18px 18px 4px 18px}
+
+/* ================= C: Command palette (borrowed) ================= */
+.dC{--c-bg:#1b1512;--c-panel:#241c18;--c-ink:#f4ebe0;--c-muted:#a8968a;--c-line:#3a2e27;--c-sel:#3a2c1a;--c-acc:#ffe9a8;--wfont:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+[data-theme=light] .dC, :root:not([data-theme=dark]) .dC{--c-bg:#fffdf9;--c-panel:#f6f0e7;--c-ink:#2a1810;--c-muted:#6b574b;--c-line:#e4d9cc;--c-sel:#ffe9a8;--c-acc:#5a3524}
+.dC .win{background:var(--c-bg);color:var(--c-ink);width:760px;border:1px solid var(--c-line)}
+.dC .search{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--c-line);font-size:20px}
+.dC .search img{width:28px;height:28px}
+.dC .search .q{flex:1}.dC .search .q::after{content:"";display:inline-block;width:2px;height:22px;background:var(--c-ink);vertical-align:-4px;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.dC .cols{display:grid;grid-template-columns:300px 1fr;min-height:400px}
+.dC .res{border-right:1px solid var(--c-line);padding:8px}
+.dC .gh{font:700 12px var(--wfont);letter-spacing:.06em;color:var(--c-muted);padding:10px 10px 4px}
+.dC .it{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;font-size:15px}
+.dC .it.on{background:var(--c-sel)}
+.dC .it .sc{margin-left:auto;font:600 12px var(--mono);color:var(--c-muted)}
+.dC .det{padding:18px 22px;background:var(--c-panel)}
+.dC .det h4{margin:0 0 2px;font-size:18px}
+.dC .det p{margin:0 0 14px;color:var(--c-muted);font-size:14px}
+.dC .fld{margin-bottom:12px}.dC .fld label{display:block;font-size:13px;font-weight:600;color:var(--c-muted);margin-bottom:4px}
+.dC .inp{border:1px solid var(--c-line);background:var(--c-bg);border-radius:8px;padding:8px 10px;font-size:15px}
+.dC .foot{display:flex;gap:16px;padding:10px 16px;border-top:1px solid var(--c-line);font-size:13px;color:var(--c-muted)}
+.dC .pill{height:34px;border-radius:999px;background:rgba(27,21,18,.92);color:#f4ebe0;display:flex;align-items:center;gap:8px;padding:0 12px 0 4px;font:500 14px var(--wfont);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.dC .pill img{width:26px;height:26px}
+.dC .hud{width:420px;border-radius:16px;background:rgba(27,21,18,.94);color:#f4ebe0;padding:12px 16px;font:15px/1.5 var(--wfont);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.dC .hud .live{color:#ffe9a8}
+.dC .hud .dim{color:#a8968a}
+.dC .fr{width:440px;background:var(--c-bg);color:var(--c-ink);border:1px solid var(--c-line);border-radius:14px;padding:26px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--wfont)}
+.dC .caps{display:flex;justify-content:center;gap:10px;margin:18px 0}
+.dC .cap{min-width:84px;padding:14px 12px;border-radius:12px;border:1px solid var(--c-line);border-bottom-width:5px;font:700 18px var(--mono)}
+.dC .cap.down{background:var(--c-sel);border-bottom-width:2px;transform:translateY(3px)}
+
+/* ================= D: Today (dashboard home) ================= */
+.dD{--d-bg:#fbf8f3;--d-card:#fff;--d-ink:#2a1810;--d-muted:#6b574b;--d-line:#ebe2d6;--d-acc:#5a3524;--d-hi:#ffe9a8;--d-rose:#ef8a9a;--wfont:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+[data-theme=dark] .dD{--d-bg:#1a1411;--d-card:#241b17;--d-ink:#f4ebe0;--d-muted:#bba897;--d-line:#3a2d25;--d-acc:#ffe9a8;--d-hi:#4a3a1c}
+.dD .win{background:var(--d-bg);color:var(--d-ink);width:860px}
+.dD .tb{border-bottom:1px solid var(--d-line)}
+.dD .body{display:grid;grid-template-columns:64px 1fr 260px;min-height:480px}
+.dD .rail{border-right:1px solid var(--d-line);display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0}
+.dD .rail a{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;text-decoration:none;font-size:10px;font-weight:600;color:var(--d-muted)}
+.dD .rail a svg{width:20px;height:20px}
+.dD .rail a.on{background:var(--d-hi);color:var(--d-ink)}
+.dD main{padding:22px 26px}
+.dD .next{display:flex;gap:16px;align-items:center;padding:18px 20px;border-radius:14px;background:var(--d-hi);color:#2a1810}
+[data-theme=dark] .dD .next{color:var(--d-ink)}
+.dD .next .when{font:700 34px/1 var(--wfont)}
+.dD .next .t{flex:1}.dD .next b{font-size:18px;display:block}
+.dD .next .go{background:#2a1810;color:#ffe9a8;border-radius:999px;padding:8px 16px;font-weight:700;font-size:15px}
+[data-theme=dark] .dD .next .go{background:#ffe9a8;color:#2a1810}
+.dD .stats{display:flex;gap:28px;margin:22px 0 8px}
+.dD .stats div b{display:block;font:700 28px var(--wfont)}
+.dD .stats div span{font-size:14px;color:var(--d-muted)}
+.dD .tl{list-style:none;margin:14px 0 0;padding:0}
+.dD .tl li{display:grid;grid-template-columns:56px 48px 1fr;gap:8px;padding:9px 0;border-top:1px solid var(--d-line);font-size:15px}
+.dD .tl .tm{color:var(--d-muted);font-variant-numeric:tabular-nums}
+.dD .tl .k{font-size:13px;color:var(--d-muted)}
+.dD aside{border-left:1px solid var(--d-line);padding:22px 18px}
+.dD aside h4{margin:0 0 10px;font-size:16px}
+.dD .chk{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:15px}
+.dD .chk .b{width:22px;height:22px;border-radius:50%;border:2px solid var(--d-muted);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}
+.dD .chk .b.done{background:var(--d-acc);border-color:var(--d-acc);color:var(--d-bg)}
+.dD .bar{height:8px;border-radius:4px;background:var(--d-line);margin:4px 0 12px;overflow:hidden}.dD .bar i{display:block;height:100%;width:33%;background:var(--d-acc)}
+.dD .pill{height:42px;border-radius:14px;background:#fbf8f3;color:#2a1810;display:flex;align-items:center;gap:10px;padding:0 6px 0 6px;font:500 15px var(--wfont);box-shadow:0 6px 18px rgba(0,0,0,.25);border:1px solid #e4d9cc}
+.dD .pill img{width:30px;height:30px}
+.dD .pill .sep{width:1px;height:22px;background:#e4d9cc}
+.dD .pill .nm{background:#ffe9a8;border-radius:9px;padding:4px 10px;font-weight:600}
+
+/* ================= E: Notebook (notes-first, calm) ================= */
+.dE{--e-bg:#fbf8f3;--e-side:#f3ede4;--e-ink:#2a1810;--e-muted:#655246;--e-line:#e4d9cc;--e-acc:#5a3524;--e-hi:#ffe9a8;--wfont:"Atkinson Hyperlegible","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+[data-theme=dark] .dE{--e-bg:#1d1612;--e-side:#17110e;--e-ink:#f1e8dc;--e-muted:#b9a695;--e-line:#33271f;--e-acc:#ffe9a8;--e-hi:#3f3118}
+.dE .win{background:var(--e-bg);color:var(--e-ink);width:880px}
+.dE .tb{background:var(--e-side)}
+.dE .body{display:grid;grid-template-columns:270px 1fr;min-height:500px}
+.dE .list{background:var(--e-side);padding:6px 10px}
+.dE .seg{display:flex;background:var(--e-bg);border-radius:10px;padding:3px;margin:6px 4px 10px}
+.dE .seg span{flex:1;text-align:center;padding:6px;border-radius:8px;font-size:14px;font-weight:700;color:var(--e-muted)}
+.dE .seg span.on{background:var(--e-acc);color:var(--e-bg)}
+.dE .day{font-size:13px;font-weight:700;color:var(--e-muted);padding:10px 8px 4px}
+.dE .n{padding:9px 10px;border-radius:10px;font-size:15px}
+.dE .n small{display:block;color:var(--e-muted);font-size:13px}
+.dE .n.on{background:var(--e-bg);box-shadow:inset 0 0 0 1px var(--e-line)}
+.dE article{padding:26px 36px;max-width:620px}
+.dE article .k{font-size:14px;color:var(--e-muted)}
+.dE article h3{font:700 26px/1.25 var(--wfont);margin:4px 0 16px}
+.dE article p{font-size:17px;line-height:1.6;margin:0 0 14px}
+.dE mark{background:var(--e-hi);color:inherit;padding:0 3px;border-radius:3px}
+.dE .todo{list-style:none;padding:0;margin:0 0 16px}.dE .todo li{display:flex;gap:10px;padding:5px 0;font-size:17px}
+.dE .todo i{width:20px;height:20px;border:2px solid var(--e-muted);border-radius:5px;flex:none;margin-top:3px}
+.dE .exp{border-top:1px solid var(--e-line);padding-top:12px;color:var(--e-muted);font-size:15px;font-weight:700}
+.dE .pill{height:40px;border-radius:999px;background:var(--pillbg,#fbf8f3);color:#2a1810;display:flex;align-items:center;gap:10px;padding:0 16px 0 5px;font:600 15px var(--wfont);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.dE .pill img{width:30px;height:30px}
+.dE .pill u{text-decoration:none;color:#655246;font-weight:400}
+.dE .fr{width:480px;background:var(--e-bg);color:var(--e-ink);border-radius:12px;padding:28px 32px;box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--wfont)}
+.dE .fr ol{padding-left:22px;margin:8px 0 18px}.dE .fr li{margin:8px 0;font-size:17px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <img src="../branding/yappr-icon.svg" alt="Yappr icon: Skip the dog barking on butter yellow">
+  <div>
+    <h1>Yappr: five directions for the new look</h1>
+    <p>The job: someone who just installed Yappr can dictate in their first minute, and it looks good enough that they keep it open.</p>
+  </div>
+  <div class="tools">
+    <button class="btn" id="theme" aria-pressed="false">Dark mode</button>
+  </div>
+</header>
+<p class="fixed"><b>Fixed in every direction:</b> the Yappr name, Skip the dog, and the brand colours (butter, cream, bark brown). All of today's features stay: Ctrl+Win dictation, hands-free, Alt+Shift+Z re-paste, meeting notes, read-aloud, dictionary and history. Nothing loads from the internet. <b>What changes</b> is layout, density, type, how colour is used, and how you get around.</p>
+
+<div class="picker" role="tablist" aria-label="Directions">
+  <button class="pick" role="tab" aria-selected="true" data-d="A"><div class="swatch"><span style="background:#efe8df"></span><span style="background:#5a3524"></span><span style="background:#ffe9a8;flex:.4"></span></div><span class="k">A · EXPECTED</span><span class="n">Windows Native</span><span class="i">Feels like Windows 11 Settings, with Yappr's colours.</span></button>
+  <button class="pick" role="tab" aria-selected="false" data-d="B"><div class="swatch"><span style="background:#ffe9a8;flex:2"></span><span style="background:#5a3524"></span><span style="background:#ef8a9a;flex:.4"></span></div><span class="k">B · BOLD</span><span class="n">Skip Leads</span><span class="i">The mascot is the interface: chunky, warm, playful.</span></button>
+  <button class="pick" role="tab" aria-selected="false" data-d="C"><div class="swatch"><span style="background:#1b1512;flex:2"></span><span style="background:#ffe9a8;flex:.5"></span></div><span class="k">C · BORROWED</span><span class="n">Palette</span><span class="i">One search box finds everything, like Raycast.</span></button>
+  <button class="pick" role="tab" aria-selected="false" data-d="D"><div class="swatch"><span style="background:#fbf8f3;flex:1.4"></span><span style="background:#ffe9a8"></span><span style="background:#2a1810;flex:.4"></span></div><span class="k">D</span><span class="n">Today</span><span class="i">Opens to a home screen: your next meeting, your day, setup steps.</span></button>
+  <button class="pick" role="tab" aria-selected="false" data-d="E"><div class="swatch"><span style="background:#f3ede4"></span><span style="background:#fbf8f3;flex:1.4"></span><span style="background:#ffe9a8;flex:.3"></span></div><span class="k">E</span><span class="n">Notebook</span><span class="i">Notes first. Calm, very readable, settings on one page.</span></button>
+</div>
+
+<!-- ====================== A ====================== -->
+<section class="panel dA" id="pA" role="tabpanel">
+  <div class="meta">
+    <div><span class="tag">A · Expected</span><h2>Windows Native</h2><p>Use the patterns Windows 11 users already know: a left sidebar, setting rows with a plain one-line explanation, and controls on the right. Yappr's brown and butter replace Windows blue. Nothing to learn.</p></div>
+    <div><div class="lbl">BEST AT</div><p>Trust and clarity. Every setting has a plain "what this does" line, and there's no learning curve.</p></div>
+    <div><div class="lbl">RISK</div><p>Safe, but forgettable. It looks like any other Windows utility, and Skip only shows up as an icon.</p></div>
+  </div>
+
+  <div class="stage-label">Bar at the bottom of the screen <button class="demo" data-cycle="A">Try it: next state ›</button> <span class="small" id="sA">Ready</span></div>
+  <div class="stage"><div class="desk"><div class="pillset">
+    <div class="pill" data-pill="A"></div>
+  </div></div></div>
+
+  <div class="stage-label">Settings → AI cleanup</div>
+  <div class="stage"><div class="desk">
+    <div class="win">
+      <div class="tb"><img src="../branding/yappr-icon.svg" alt="">Yappr<span class="x">–□×</span></div>
+      <div class="body">
+        <nav aria-label="Settings sections">
+          <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/></svg>AI cleanup</a>
+          <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/></svg>My words</a>
+          <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Meetings</a>
+          <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9a4 4 0 010 6"/></svg>Read aloud</a>
+          <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</a>
+          <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>General</a>
+        </nav>
+        <main>
+          <h3>AI cleanup</h3>
+          <div class="set"><div class="t"><b>Tidy up my dictation with AI</b><span>Fixes punctuation and filler words. Only the text is sent, never your voice.</span></div><span class="toggle on" role="img" aria-label="On"></span></div>
+          <div class="grp">AI service</div>
+          <div class="set"><div class="t"><b>Which AI</b><span>Claude is the default: fast and costs about a cent a day.</span></div><span class="sel">Claude (Anthropic) ▾</span></div>
+          <div class="set"><div class="t"><b>Your key</b><span>Kept in Windows Credential Manager, never in a file.</span></div><span class="sel">sk-ant-••••••••3f9a</span></div>
+          <div class="set"><div class="t"><b>Check it works</b><span class="ok">✓ Connected. Replied in 0.6 s</span></div><span class="pbtn">Test connection</span></div>
+          <div class="grp">Advanced</div>
+          <div class="set"><div class="t"><b>Model and price</b><span>claude-haiku-5-5 · used only for your local cost log</span></div><span class="small">›</span></div>
+        </main>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="stage-label">First run</div>
+  <div class="stage"><div class="desk"><div class="row">
+    <div class="fr">
+      <div class="steps"><i class="on"></i><i></i><i></i></div>
+      <div class="small">Step 1 of 3</div>
+      <h3 style="margin:4px 0 8px">Try your first dictation</h3>
+      <p style="margin:0 0 16px">Click in the box below, then <b>hold</b> <span class="kbd">Ctrl</span> + <span class="kbd">Win</span> and say anything. Let go to paste.</p>
+      <div style="border:1px solid var(--a-line);border-radius:8px;padding:12px;min-height:70px;color:var(--a-muted)">Your words will appear here…</div>
+      <div style="display:flex;justify-content:space-between;margin-top:18px;align-items:center"><span class="small">Skip this</span><span class="pbtn">Next</span></div>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ====================== B ====================== -->
+<section class="panel dB" id="pB" role="tabpanel" hidden>
+  <div class="meta">
+    <div><span class="tag">B · Bold</span><h2>Skip Leads</h2><p>Skip is the interface. The bar <em>is</em> Skip: he perks up while listening and wags when the text lands. Big butter surfaces, chunky type and one setting per row with plenty of space. First run is a short chat with Skip.</p></div>
+    <div><div class="lbl">BEST AT</div><p>Being memorable and friendly. New users learn by doing, and the brand finally does real work.</p></div>
+    <div><div class="lbl">RISK</div><p>Can feel too cute in a work meeting or on a shared screen. Needs a "calm mode" and real illustration work.</p></div>
+  </div>
+
+  <div class="stage-label">Bar at the bottom of the screen <button class="demo" data-cycle="B">Try it: next state ›</button> <span class="small" id="sB">Ready</span></div>
+  <div class="stage"><div class="desk"><div class="pillset"><div class="pill" data-pill="B"></div></div></div></div>
+
+  <div class="stage-label">Settings → AI cleanup</div>
+  <div class="stage"><div class="desk">
+    <div class="win">
+      <div class="tb">Yappr<span class="x">–□×</span></div>
+      <div class="body">
+        <div class="hero">
+          <img src="../branding/yappr-icon.svg" alt="Skip">
+          <div class="say">"I tidy your words. Your voice never leaves this PC."</div>
+          <div class="tabs"><a class="on">AI helper</a><a>My words</a><a>Meetings</a><a>Read aloud</a><a>History</a><a>General</a></div>
+        </div>
+        <main>
+          <h3>AI helper</h3>
+          <p class="lede">Optional. Without it Skip still cleans up the basics.</p>
+          <div class="big"><div class="t"><b>Tidy my dictation</b><span>Fixes punctuation and "um"s</span></div><span class="toggle on" role="img" aria-label="On"></span></div>
+          <div class="big"><div class="t"><b>Claude (Anthropic)</b><span>About a cent a day · key saved safely in Windows</span></div><span class="chunk">Change</span></div>
+          <div class="big"><div class="t"><b>✓ Working</b><span>Last checked just now</span></div><span class="chunk">Test again</span></div>
+        </main>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="stage-label">First run</div>
+  <div class="stage"><div class="desk"><div class="row">
+    <div class="fr">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><img src="../branding/yappr-icon.svg" alt="" style="width:56px;height:56px"><b style="font-size:20px">Hi, I'm Skip.</b></div>
+      <div class="chat">
+        <div class="bub">Hold <span class="kbd">Ctrl</span> + <span class="kbd">Win</span>, tell me what you had for breakfast, then let go.</div>
+        <div class="bub me">Toast and way too much coffee.</div>
+        <div class="bub">Nailed it. That's all there is to it. Want me to take meeting notes too?</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px"><span class="chunk" style="background:var(--b-acc);color:var(--b-bg)">Yes, set up meetings</span><span class="chunk" style="background:transparent;color:var(--b-ink);box-shadow:inset 0 0 0 2px var(--b-acc)">Later</span></div>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ====================== C ====================== -->
+<section class="panel dC" id="pC" role="tabpanel" hidden>
+  <div class="meta">
+    <div><span class="tag">C · Borrowed</span><h2>Palette</h2><p>Borrowed from Raycast and VS Code's command palette. There are no tabs: Yappr opens as one search box that finds any setting, word, note or past dictation. The bar is tiny until you talk, then grows into a heads-up strip that shows your words as you say them.</p></div>
+    <div><div class="lbl">BEST AT</div><p>Speed, and staying out of the way. Live text while you talk builds trust that it heard you.</p></div>
+    <div><div class="lbl">RISK</div><p>New users don't know what to search for. Needs good suggestions when the box is empty. Dark-first may feel heavy to some.</p></div>
+  </div>
+
+  <div class="stage-label">Bar at the bottom of the screen <button class="demo" data-cycle="C">Try it: next state ›</button> <span class="small" id="sC">Ready</span></div>
+  <div class="stage"><div class="desk"><div class="pillset"><div data-pill="C"></div></div></div></div>
+
+  <div class="stage-label">Yappr window, searching "key"</div>
+  <div class="stage"><div class="desk">
+    <div class="win">
+      <div class="search"><img src="../branding/yappr-icon.svg" alt=""><span class="q">key</span><span class="kbd" style="font-size:12px">Esc</span></div>
+      <div class="cols">
+        <div class="res">
+          <div class="gh">SETTINGS</div>
+          <div class="it on">AI key · Claude<span class="sc">↵</span></div>
+          <div class="it">Hotkeys<span class="sc">Ctrl+Win</span></div>
+          <div class="gh">MY WORDS</div>
+          <div class="it">Kiyosaki <span class="small">"key a saki"</span></div>
+          <div class="gh">NOTES</div>
+          <div class="it">Q4 planning: "…key dates for launch…"</div>
+          <div class="gh">SUGGESTED</div>
+          <div class="it">Start note-taker<span class="sc">Alt+N</span></div>
+          <div class="it">Paste last dictation<span class="sc">Alt+Shift+Z</span></div>
+        </div>
+        <div class="det">
+          <h4>AI key · Claude</h4>
+          <p>Used to tidy your text. Only the words are sent, never audio.</p>
+          <div class="fld"><label>Which AI</label><div class="inp">Claude (Anthropic)</div></div>
+          <div class="fld"><label>Your key</label><div class="inp">sk-ant-••••••••3f9a</div></div>
+          <div class="fld"><label>Status</label><div style="font-size:15px">✓ Connected · 0.6 s</div></div>
+        </div>
+      </div>
+      <div class="foot"><span>↑↓ move</span><span>↵ open</span><span>Tab edit</span><span style="margin-left:auto">Example words and notes</span></div>
+    </div>
+  </div></div>
+
+  <div class="stage-label">First run <button class="demo" id="capDemo">Press the keys ›</button></div>
+  <div class="stage"><div class="desk"><div class="row">
+    <div class="fr">
+      <img src="../branding/yappr-icon.svg" alt="" style="width:48px;height:48px">
+      <h3 style="margin:6px 0 4px;font-size:22px">One shortcut to remember</h3>
+      <p style="margin:0;color:var(--c-muted)">Hold these anywhere you can type.</p>
+      <div class="caps"><span class="cap" id="cap1">Ctrl</span><span class="cap" id="cap2">Win</span></div>
+      <p style="margin:0;font-size:15px" id="capMsg">Press them now. We'll know when you do.</p>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ====================== D ====================== -->
+<section class="panel dD" id="pD" role="tabpanel" hidden>
+  <div class="meta">
+    <div><span class="tag">D</span><h2>Today</h2><p>Yappr gets a home screen. It opens to your next meeting, a timeline of today's dictations and notes, and a setup checklist until you're done. Settings move behind a gear. The bar shows a countdown to your next meeting.</p></div>
+    <div><div class="lbl">BEST AT</div><p>Showing what Yappr did for you, so it's easy to come back to. Setup is guided by the checklist, not a wizard you can't return to.</p></div>
+    <div><div class="lbl">RISK</div><p>The most to build. Stats like "time saved" need an honest way to count them, or they should go.</p></div>
+  </div>
+
+  <div class="stage-label">Bar at the bottom of the screen <button class="demo" data-cycle="D">Try it: next state ›</button> <span class="small" id="sD">Ready</span></div>
+  <div class="stage"><div class="desk"><div class="pillset"><div class="pill" data-pill="D"></div></div></div></div>
+
+  <div class="stage-label">Home (example data)</div>
+  <div class="stage"><div class="desk">
+    <div class="win">
+      <div class="tb"><img src="../branding/yappr-icon.svg" alt="">Yappr<span class="x">–□×</span></div>
+      <div class="body">
+        <div class="rail">
+          <a class="on" title="Today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9H4z"/></svg></a>
+          <a title="Notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/></svg></a>
+          <a title="My words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/></svg></a>
+          <a title="Settings" style="margin-top:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></a>
+        </div>
+        <main>
+          <div class="next"><div class="when">2:00</div><div class="t"><b>Design sync</b>Starts in 18 min · Yappr will offer to take notes</div><span class="go">Take notes now</span></div>
+          <div class="stats"><div><b>1,284</b><span>words dictated today</span></div><div><b>14</b><span>dictations</span></div><div><b>2</b><span>meetings noted</span></div></div>
+          <ul class="tl">
+            <li><span class="tm">11:42</span><span class="k" style="font-weight:700">Said</span><span>"Thanks for the quick turnaround, let's lock it for Friday." <span class="k">· Outlook</span></span></li>
+            <li><span class="tm">10:00</span><span class="k" style="font-weight:700">Notes</span><span><b>Q4 planning</b> · 47 min · 3 next steps <span class="k">· notes ready</span></span></li>
+            <li><span class="tm">9:15</span><span class="k" style="font-weight:700">Said</span><span>"Can you send me the deck before standup?" <span class="k">· Slack</span></span></li>
+          </ul>
+        </main>
+        <aside>
+          <h4>Get set up · 1 of 3</h4>
+          <div class="bar"><i></i></div>
+          <div class="chk"><span class="b done">✓</span><span>Try a dictation</span></div>
+          <div class="chk"><span class="b"></span><span><b>Add an AI helper</b><br><span class="small">Optional. Smarter clean-up, about a cent a day.</span></span></div>
+          <div class="chk"><span class="b"></span><span><b>Connect your calendar</b><br><span class="small">So Yappr can offer to take notes.</span></span></div>
+        </aside>
+      </div>
+    </div>
+  </div></div>
+  <p class="small">All data on this screen is example data.</p>
+</section>
+
+<!-- ====================== E ====================== -->
+<section class="panel dE" id="pE" role="tabpanel" hidden>
+  <div class="meta">
+    <div><span class="tag">E</span><h2>Notebook</h2><p>Your words come first. The window is a calm two-pane reader for meeting notes and past dictations, set in Atkinson Hyperlegible at reading size. Settings are one scrolling page you rarely visit. The bar is soft cream with the shortcut written out.</p></div>
+    <div><div class="lbl">BEST AT</div><p>Reading and using meeting notes. Very readable, low effort to look at all day.</p></div>
+    <div><div class="lbl">RISK</div><p>Quiet. Settings and setup feel secondary, and someone who only dictates rarely opens the window at all.</p></div>
+  </div>
+
+  <div class="stage-label">Bar at the bottom of the screen <button class="demo" data-cycle="E">Try it: next state ›</button> <span class="small" id="sE">Ready</span></div>
+  <div class="stage"><div class="desk"><div class="pillset"><div class="pill" data-pill="E"></div></div></div></div>
+
+  <div class="stage-label">Notes (example meeting)</div>
+  <div class="stage"><div class="desk">
+    <div class="win">
+      <div class="tb"><img src="../branding/yappr-icon.svg" alt="">Yappr<span class="x">–□×</span></div>
+      <div class="body">
+        <div class="list">
+          <div class="seg"><span class="on">Meetings</span><span>Dictations</span><span>Settings</span></div>
+          <div class="day">TODAY</div>
+          <div class="n on"><b>Q4 planning</b><small>10:00 · 47 min · 3 next steps</small></div>
+          <div class="day">YESTERDAY</div>
+          <div class="n"><b>Hiring sync</b><small>3:30 · 22 min</small></div>
+          <div class="n"><b>Client call: Northwind</b><small>11:00 · 58 min</small></div>
+          <div class="day">MON 23 NOV</div>
+          <div class="n"><b>Weekly 1:1</b><small>9:00 · 30 min</small></div>
+        </div>
+        <article>
+          <div class="k">Today · 10:00–10:47 · You and 4 others</div>
+          <h3>Q4 planning</h3>
+          <p>The team agreed to <mark>ship the beta on 12 December</mark> and hold pricing until January. Design needs two more weeks for onboarding.</p>
+          <b>Next steps</b>
+          <ul class="todo"><li><i></i>Sam: send the beta invite list by Friday</li><li><i></i>Priya: draft the onboarding screens</li><li><i></i>You: confirm the launch date with legal</li></ul>
+          <div class="exp">▸ Full transcript (47 min)</div>
+        </article>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="stage-label">First run</div>
+  <div class="stage"><div class="desk"><div class="row">
+    <div class="fr">
+      <img src="../branding/yappr-icon.svg" alt="" style="width:44px;height:44px">
+      <h3 style="margin:8px 0 2px;font-size:24px">Three things to know</h3>
+      <ol>
+        <li><b>Hold</b> <span class="kbd">Ctrl</span>+<span class="kbd">Win</span> and talk. Let go and your words are typed for you.</li>
+        <li>Click <b>Notes</b> on the bar to record a meeting. Audio stays on this PC.</li>
+        <li>Highlight any text and press <span class="kbd">Ctrl</span>+<span class="kbd">Alt</span>+<span class="kbd">X</span> to hear it read aloud.</li>
+      </ol>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="small">AI clean-up is optional. You can set it up later.</span><span style="background:var(--e-acc);color:var(--e-bg);padding:8px 16px;border-radius:8px;font-weight:700">Try it now</span></div>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ====================== Steal list ====================== -->
+<section class="block">
+  <h2>Steal list: mix and match</h2>
+  <p class="small" style="margin:0">Tick what you want, whichever direction it comes from, then copy your picks.</p>
+  <div class="chips" id="chips">
+    <label class="chip"><input type="checkbox">A's one-line "what this does" under every setting</label>
+    <label class="chip"><input type="checkbox">A's left sidebar navigation</label>
+    <label class="chip"><input type="checkbox">B's Skip-as-the-bar (perks up while listening)</label>
+    <label class="chip"><input type="checkbox">B's chat-style first run</label>
+    <label class="chip"><input type="checkbox">B's big friendly toggles</label>
+    <label class="chip"><input type="checkbox">C's live words while you talk</label>
+    <label class="chip"><input type="checkbox">C's search-everything box</label>
+    <label class="chip"><input type="checkbox">C's keycaps that light up on first run</label>
+    <label class="chip"><input type="checkbox">D's home screen with next meeting</label>
+    <label class="chip"><input type="checkbox">D's setup checklist you can come back to</label>
+    <label class="chip"><input type="checkbox">D's meeting countdown on the bar</label>
+    <label class="chip"><input type="checkbox">E's reader for meeting notes</label>
+    <label class="chip"><input type="checkbox">E's "three things to know" first run</label>
+    <label class="chip"><input type="checkbox">E's Atkinson Hyperlegible type</label>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" id="copy">Copy my picks</button><span class="small" id="copied" aria-live="polite"></span></div>
+</section>
+
+<!-- ====================== Research ====================== -->
+<section class="block">
+  <h2>Where the ideas came from</h2>
+  <p class="small" style="margin:0 0 10px">From well-known product patterns, not a fresh web survey. Each link is the product's home page.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Product</th><th>Category</th><th>Pattern worth borrowing</th><th>Used in</th></tr>
+    <tr><td><a href="https://wisprflow.ai">Wispr Flow</a></td><td>Dictation</td><td>A small bar at the bottom of the screen that animates while you speak</td><td>A, B, C</td></tr>
+    <tr><td><a href="https://superwhisper.com">Superwhisper</a></td><td>Dictation</td><td>Shows what you said while you're still talking</td><td>C</td></tr>
+    <tr><td><a href="https://www.granola.ai">Granola</a></td><td>Meeting notes</td><td>Notes-first window; transcript hidden behind a click</td><td>E</td></tr>
+    <tr><td><a href="https://support.microsoft.com/windows">Windows 11 Settings</a></td><td>OS</td><td>Setting rows with a title, a plain description and the control on the right</td><td>A</td></tr>
+    <tr><td><a href="https://www.raycast.com">Raycast</a></td><td>Launcher (outside the category)</td><td>One search box for every action and setting</td><td>C</td></tr>
+    <tr><td><a href="https://www.duolingo.com">Duolingo</a></td><td>Learning (outside the category)</td><td>A mascot that teaches by having you do it</td><td>B</td></tr>
+    <tr><td><a href="https://culturedcode.com/things/">Things 3</a></td><td>To-do (outside the category)</td><td>Calm "Today" view and grouping by day</td><td>D, E</td></tr>
+    <tr><td><a href="https://linear.app">Linear</a></td><td>Issue tracker (outside the category)</td><td>Onboarding checklist that stays until you're done</td><td>D</td></tr>
+  </table></div>
+</section>
+
+</div>
+
+<script>
+// Theme
+const root=document.documentElement, tbtn=document.getElementById('theme');
+function setTheme(t){root.dataset.theme=t;tbtn.textContent=t==='dark'?'Light mode':'Dark mode';tbtn.setAttribute('aria-pressed',t==='dark')}
+setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+tbtn.onclick=()=>setTheme(root.dataset.theme==='dark'?'light':'dark');
+
+// Tabs
+const picks=[...document.querySelectorAll('.pick')];
+function show(d){picks.forEach(p=>p.setAttribute('aria-selected',p.dataset.d===d));document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p'+d)}
+{const h=location.hash.slice(1).split(',');if('ABCDE'.includes(h[0])&&h[0])show(h[0]);if(h[1]==='dark'||h[1]==='light')setTheme(h[1]);}
+picks.forEach((p,i)=>{p.onclick=()=>show(p.dataset.d);p.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const n=picks[(i+(e.key==='ArrowRight'?1:4))%5];n.focus();show(n.dataset.d)}}});
+
+// Bar states per direction
+const ICON='<img src="../branding/yappr-icon.svg" alt="">';
+const W='<span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>';
+const S={
+ A:[['Ready',ICON+'<span style="opacity:.75">Hold Ctrl+Win to talk</span><span class="notes">Notes</span>'],
+    ['Listening',ICON+W+'<span>Listening… let go to paste</span>'],
+    ['Pasted',ICON+'<span>✓ Pasted 42 words</span>'],
+    ['Meeting',ICON+'<span class="rec"><span class="dot"></span>Recording 0:12:43</span><span class="notes">■ Stop</span>']],
+ B:[['Ready',ICON+'<span>Hold Ctrl+Win, I\'m listening</span>'],
+    ['Listening','<img class="bounce" src="../branding/yappr-icon.svg" alt="">'+W+'<span>Got it, keep going…</span>'],
+    ['Pasted',ICON+'<span>✓ Fetched! 42 words</span>'],
+    ['Meeting',ICON+'<span class="rec">● Taking notes · 12:43</span><span>Stop</span>']],
+ C:[['Ready','<div class="pill">'+ICON+'<span style="opacity:.7">Ctrl+Win</span></div>'],
+    ['Listening','<div class="hud"><div class="dim" style="font-size:13px;margin-bottom:4px">● Listening · let go to paste</div><span>Thanks for the quick turnaround, let\'s lock it </span><span class="live">for Fri…</span></div>'],
+    ['Pasted','<div class="pill">'+ICON+'<span>✓ Pasted</span></div>'],
+    ['Meeting','<div class="pill">'+ICON+'<span>● 12:43 · Q4 planning</span></div>']],
+ D:[['Ready',ICON+'<span>Ctrl+Win to talk</span><span class="sep"></span><span class="nm">Design sync in 18 min</span>'],
+    ['Listening',ICON+W+'<span>Listening…</span>'],
+    ['Meeting soon',ICON+'<span><b>Design sync</b> is starting</span><span class="nm">Take notes</span><span style="padding:0 6px;color:#655246">Not now</span>'],
+    ['Meeting',ICON+'<span>● Notes · 12:43</span><span class="nm">■ Stop</span>']],
+ E:[['Ready',ICON+'<span>Yappr <u>· hold Ctrl+Win</u></span><span style="border-left:1px solid #e4d9cc;padding-left:10px">Notes</span>'],
+    ['Listening',ICON+W+'<span>Listening</span>'],
+    ['Pasted',ICON+'<span>✓ Typed into Outlook</span>'],
+    ['Meeting',ICON+'<span>● Recording <u>12:43</u></span><span style="border-left:1px solid #e4d9cc;padding-left:10px">Stop</span>']]
+};
+const st={};
+function render(d){const [label,html]=S[d][st[d]];document.querySelector('[data-pill="'+d+'"]').innerHTML=html;document.getElementById('s'+d).textContent=label+' ('+(st[d]+1)+' of '+S[d].length+')'}
+Object.keys(S).forEach(d=>{st[d]=0;render(d)});
+document.querySelectorAll('[data-cycle]').forEach(b=>b.onclick=()=>{const d=b.dataset.cycle;st[d]=(st[d]+1)%S[d].length;render(d)});
+
+// C keycaps demo
+document.getElementById('capDemo').onclick=()=>{const a=document.getElementById('cap1'),b=document.getElementById('cap2'),m=document.getElementById('capMsg');
+ a.classList.add('down');setTimeout(()=>b.classList.add('down'),250);setTimeout(()=>m.textContent='✓ That\'s it. Now say something and let go.',500);
+ setTimeout(()=>{a.classList.remove('down');b.classList.remove('down')},1800)};
+// Also react to real keys
+let down={};addEventListener('keydown',e=>{down[e.key]=1;if(e.key==='Control')document.getElementById('cap1').classList.add('down');if(e.key==='Meta')document.getElementById('cap2').classList.add('down')});
+addEventListener('keyup',e=>{delete down[e.key];if(e.key==='Control')document.getElementById('cap1').classList.remove('down');if(e.key==='Meta')document.getElementById('cap2').classList.remove('down')});
+
+// Copy picks
+document.getElementById('copy').onclick=async()=>{const t=[...document.querySelectorAll('#chips input:checked')].map(i=>'- '+i.parentElement.textContent.trim()).join('\n')||'(nothing ticked)';
+ const dir=document.querySelector('.pick[aria-selected=true] .n').textContent;
+ const txt='Base direction: '+dir+'\nSteal:\n'+t;
+ try{await navigator.clipboard.writeText(txt);document.getElementById('copied').textContent='Copied. Paste it into the chat.'}catch(e){document.getElementById('copied').textContent=txt}};
+</script>
+</body>
+</html>

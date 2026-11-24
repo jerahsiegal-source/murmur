@@ -1,0 +1,26 @@
+{
+ "window_found": "10:57:55",
+ "seconds": 120.0,
+ "processes_in_window_tree": 8,
+ "remote": {
+  "150.171.23.17:443": {
+   "pid": 953564,
+   "name": "msedgewebview2.exe",
+   "status": "ESTABLISHED",
+   "first": "10:57:58"
+  },
+  "150.171.29.11:443": {
+   "pid": 953564,
+   "name": "msedgewebview2.exe",
+   "status": "ESTABLISHED",
+   "first": "10:58:57"
+  },
+  "23.200.0.21:80": {
+   "pid": 953564,
+   "name": "msedgewebview2.exe",
+   "status": "ESTABLISHED",
+   "first": "10:59:03"
+  }
+ },
+ "loopback": {}
+}

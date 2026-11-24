@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yappr redesign: before and after</title>
+<style>
+:root{--bg:#fbf8f3;--ink:#2a1810;--muted:#6b574b;--line:#ebe2d6;--hi:#ffe9a8}
+@media (prefers-color-scheme:dark){:root{--bg:#1a1411;--ink:#f4ebe0;--muted:#bba897;--line:#3a2d25;--hi:#4a3a1c}}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:28px 22px 80px}
+h1{font-size:30px;margin:0 0 6px}h2{font-size:22px;margin:40px 0 6px}p{max-width:72ch;margin:0 0 10px}.muted{color:var(--muted)}
+.ask{background:var(--hi);border-radius:14px;padding:16px 20px;margin:18px 0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin:12px 0}
+figure{margin:0}figcaption{font-size:14px;color:var(--muted);margin-top:4px}
+img{max-width:100%;border:1px solid var(--line);border-radius:10px;display:block;background:#fff}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:1px 10px;border-radius:999px;background:var(--line)}
+@media (max-width:760px){.pair{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<h1>Yappr redesign: before and after</h1>
+<p class="muted">For your sign-off on D2 ("every visible surface uses the chosen design"). Screens marked <b>live</b> are captures of the real app; the rest are the same page rendered with clearly fake example data.</p>
+<div class="ask"><b>What I need from you:</b> look through each section and say "signed off" or what to change. That's the last open item.</div>
+
+<h2>The bar</h2>
+<p>Skip sits in the bar; his ears go up while he's listening. Drag it anywhere (it remembers), right-click to hide it, or hide it from the tray or Settings.</p>
+<figure><img src="shots/_bar-before-after.png" alt="Before and after of every bar state and the meeting prompt"><figcaption>Before (left) and after (right): ready, listening, hands-free, typing, pasted, meeting soon, taking notes, and the meeting prompt. Live captures.</figcaption></figure>
+<div class="grid">
+<figure><img src="shots/skip-poses.png" alt="Skip resting and with ears up"><figcaption>Skip resting / listening (ears up)</figcaption></figure>
+<figure><img src="shots/after/bar-moved.png" alt="Bar dragged up the screen"><figcaption><span class="tag">live</span> dragged up and left; same spot after a restart</figcaption></figure>
+<figure><img src="shots/after/bar-menu.png" alt="Right-click menu of the bar"><figcaption><span class="tag">live</span> right-click: Open Yappr / Hide the bar / Move it back</figcaption></figure>
+<figure><img src="shots/after/bar-read-aloud.png" alt="Read-aloud messages on the bar"><figcaption>read aloud: the bar's messages (loading voice, paused, speed, nothing highlighted, during meeting notes). Settings → Read aloud is below.</figcaption></figure>
+</div>
+
+<h2>First run</h2>
+<div class="grid">
+<figure><img src="shots/first-run-1-welcome.png" alt=""><figcaption><span class="tag">live</span> opens by itself on a new install</figcaption></figure>
+<figure><img src="shots/first-run-2-dictated.png" alt=""><figcaption><span class="tag">live</span> first dictation lands in the box</figcaption></figure>
+<figure><img src="shots/first-run-3-ai-step.png" alt=""><figcaption><span class="tag">live</span> optional AI helper</figcaption></figure>
+<figure><img src="shots/first-run-5-meetings-step.png" alt=""><figcaption><span class="tag">live</span> meeting notes + calendar (optional)</figcaption></figure>
+<figure><img src="shots/first-run-6-today.png" alt=""><figcaption><span class="tag">live</span> lands on Today with the setup checklist</figcaption></figure>
+<figure><img src="shots/welcome-1-dark.png" alt=""><figcaption>dark mode</figcaption></figure>
+</div>
+
+<h2>Today</h2>
+<div class="pair">
+<figure><img src="shots/today-light.png" alt=""><figcaption>light</figcaption></figure>
+<figure><img src="shots/today-new-dark.png" alt=""><figcaption>dark, with setup checklist</figcaption></figure>
+<figure><img src="shots/today-dark.png" alt=""><figcaption>dark, all set up</figcaption></figure>
+<figure><img src="shots/today-new-light.png" alt=""><figcaption>light, with setup checklist</figcaption></figure>
+</div>
+<figure><img src="shots/first-run-8-today-during-meeting.png" alt=""><figcaption><span class="tag">live</span> while taking notes</figcaption></figure>
+
+<h2>Notes (meetings and dictation history)</h2>
+<p class="muted">Before: a list of folder names and a plain text box in Settings → Meetings / History.</p>
+<div class="pair">
+<figure><img src="shots/before/settings-meetings.png" alt=""><figcaption>before: Settings → Meetings</figcaption></figure>
+<figure><img src="shots/notes-meeting-light.png" alt=""><figcaption>after: Notes reader</figcaption></figure>
+<figure><img src="shots/before/settings-history.png" alt=""><figcaption>before: Settings → History</figcaption></figure>
+<figure><img src="shots/notes-dictation-dark.png" alt=""><figcaption>after: Notes → Dictations (dark)</figcaption></figure>
+</div>
+<div class="grid"><figure><img src="shots/first-run-9-notes.png" alt=""><figcaption><span class="tag">live</span> real meeting notes (summary came from the local fake AI, so it's placeholder text)</figcaption></figure>
+<figure><img src="shots/notes-empty-light.png" alt=""><figcaption>empty state</figcaption></figure></div>
+
+<h2>My words (was "Dictionary")</h2>
+<div class="pair">
+<figure><img src="shots/before/settings-dictionary.png" alt=""><figcaption>before</figcaption></figure>
+<figure><img src="shots/words-light.png" alt=""><figcaption>after</figcaption></figure>
+</div>
+<figure><img src="shots/words-dark.png" alt=""><figcaption>after, dark</figcaption></figure>
+
+<h2>Settings</h2>
+<div class="grid">
+<figure><img src="shots/before/settings-ai.png" alt=""><figcaption>before: AI cleanup</figcaption></figure>
+<figure><img src="shots/before/settings-read-aloud.png" alt=""><figcaption>before: Read aloud</figcaption></figure>
+<figure><img src="shots/before/settings-general.png" alt=""><figcaption>before: General</figcaption></figure>
+</div>
+<div class="pair">
+<figure><img src="shots/settings-light.png" alt=""><figcaption>after: one page (AI helper, Meetings, Read aloud, General, Shortcuts), light</figcaption></figure>
+<figure><img src="shots/settings-dark.png" alt=""><figcaption>after, dark</figcaption></figure>
+</div>
+
+<h2>Tray menu and installer</h2>
+<p><b>Tray menu</b> (Windows draws it, so it follows your Windows theme): Open Yappr · Take meeting notes / Stop meeting notes · Paste last dictation · Hide the bar / Show the bar · (Stop reading aloud, while reading) · Meeting notes · Settings · Quit Yappr. Before: Start note-taker · Paste last dictation · Open meeting notes folder · Settings… · Quit Yappr.</p>
+<p><b>Installer</b>: four numbered steps in plain words ("Downloading the speech engine… It runs on this PC, so your voice never leaves it."), a checkmark after each, then "All set." and it starts Yappr, which opens the welcome. Before: it ended by telling you to right-click the bar and paste an API key. Not run end to end here (it would reinstall into your environment): checked by PowerShell's parser; worth one real run on a clean machine.</p>
+<p class="muted">Not changed: Skip's icon (Start Menu, taskbar, tray) is the one from the rename.</p>
+</div></body></html>

@@ -160,6 +160,39 @@ def default_devices_signature() -> tuple:
     return tuple(out)
 
 
+class FileCapture:
+    """Stands in for Capture in end-to-end tests (YAPPR_FAKE_MEETING=<folder with mic.wav and sys.wav>):
+    plays the two recorded tracks into the meeting at `speed` x real time, like the fake mic does for dictation."""
+
+    def __init__(self, mic_track, sys_track, folder: Path, speed: float = 1.0):
+        import soundfile as sf
+
+        self.tracks = {"mic": mic_track, "sys": sys_track}
+        self.files = {k: sf.SoundFile(str(Path(folder) / f"{k}.wav")) for k in self.tracks}
+        self.speed = speed
+        self._stop = threading.Event()
+        self.devices = {"mic": "test recording", "sys": "test recording"}
+
+    def start(self) -> None:
+        threading.Thread(target=self._run, name="file-capture", daemon=True).start()
+
+    def _run(self) -> None:
+        blk = SR // 10
+        n = max(f.frames for f in self.files.values())
+        t0 = time.monotonic()
+        for i in range(0, n, blk):
+            if self._stop.is_set():
+                break
+            for k, tr in self.tracks.items():
+                tr.write(self.files[k].read(blk, dtype="float32"))
+            delay = t0 + (i + blk) / SR / self.speed - time.monotonic()
+            if delay > 0:
+                time.sleep(delay)
+
+    def stop(self) -> None:
+        self._stop.set()
+
+
 class Capture:
     """pyaudiowpatch streams for mic + speaker loopback."""
 

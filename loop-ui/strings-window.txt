@@ -1,0 +1,224 @@
+(hold)
+(optional, separate with commas)
++
+, then
+. The voice runs on this PC, so it's free and what you highlight never leaves it.
+0
+09:15
+1
+1,284
+1.3×
+10:00
+10:00 · 47 min · 3 next steps
+11:00 · 58 min · 4 next steps
+11:42
+14
+14:00
+15:30 · 22 min · 1 next step
+AI helper
+Add an AI helper
+Add word
+Also: Ctrl+Alt+] faster, Ctrl+Alt+[ slower.
+Alt
+Another AI service
+Another AI service (OpenAI-compatible)
+Ask me
+Beta ships 12 December.
+Browse…
+Calendar link
+Calendar link (optional)
+Can you send me the deck before standup?
+Check and save
+Check it works
+Claude (Anthropic)
+Claude is the default.
+Claude is the default: fast, and about a cent a day. Pick the other option to use OpenAI, OpenRouter, Groq, Gemini or one running on this PC.
+Click
+Click in the box below, then
+Click into any text box, hold
+Client call: Northwind
+Connect
+Connect your calendar
+Connect your calendar and Yappr will offer to take notes when one starts.
+Copy text
+Ctrl
+Days to keep
+Decisions
+Design needs two more weeks for onboarding screens.
+Design sync
+Dictation
+Dictations
+Drag the bar to move it anywhere, or right-click it to hide it. Hotkeys work either way, and you can always open Yappr from the tray icon by the clock.
+Emma (UK, female)
+Fixes punctuation, “um”s and repeated words. Only the text is sent to the AI, never your voice. When this is off, Yappr tidies up on this PC with simple rules.
+Free up memory after
+From console.anthropic.com → API keys. Kept in Windows Credential Manager, never in a file.
+Full transcript
+General
+Get one at console.anthropic.com → API keys. It's kept in Windows Credential Manager, never in a file, and only sent to the service you picked.
+Get one from your AI service's website. It's kept in Windows Credential Manager, never in a file, and only sent to the service you picked.
+Get set up
+Get set up · 0 of 3
+Get set up · 1 of 3
+Hands-free: keeps listening.
+Headset (Jabra)
+Hear it
+Hear sample
+Heart (US, female)
+Hi, I'm Yappr. Let's try it.
+Hide this list
+Highlight any text and press Ctrl+Alt+X to hear it read aloud.
+Highlight text anywhere and press
+Hiring sync
+Hold Ctrl+Win in any text box and talk.
+How many minutes before a meeting starts to offer to take notes.
+Keep notes and dictations for
+Key moments
+Kiyosaki
+Last 30 days: 212 requests, $0.0431. At this rate, about $0.06 a month.
+Leave blank to use the same model.
+Lets Yappr offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”. Yappr only reads it.
+Loading…
+Me — confirm the launch date with legal
+Meeting notes, when you want them
+Meetings
+Michael (US, male)
+Microphone
+Microphone (USB Audio)
+Minutes before a meeting
+Minutes idle
+Model
+Model for meeting summaries
+More AI options
+My words
+Names and words Yappr should always spell your way. If it keeps writing something else instead, add that under “Sounds like”.
+Next
+Next steps
+No key yet
+No meeting notes yet.
+No meetings coming up
+No price change before January.
+None.
+Northwind
+Notes
+Notes folder
+Nothing yet today.
+Older ones are deleted automatically. At least 1 day.
+Open folder
+Open questions
+Optional. Smarter clean-up, about a cent a day.
+P
+Paste the last dictation again.
+Paste the link
+Paste your key
+Plays a short sample with the voice and speed above.
+Practice box
+Price per million tokens received
+Price per million tokens sent
+Prices, for the cost estimate
+Priya
+Priya — draft the onboarding screens
+Q4 planning
+Read aloud
+Read the highlighted text aloud (again to stop).
+Remove
+Remove Kiyosaki
+Remove Northwind
+Remove Priya
+Said
+Sam — send the beta invite list (by Friday)
+Same as above
+Save
+Sends a short test sentence and shows what comes back.
+Service address
+Set up
+Settings
+Settings sections
+Shift
+Shortcuts
+Show
+Show me
+Show the bar
+Show the bar on screen
+Show the welcome again
+Skip for now
+Skip this
+So Yappr can offer to take notes when a meeting starts.
+Sounds like
+Space
+Speed
+Start Yappr when Windows starts
+Start using Yappr
+Starts in 18 min · Yappr will offer to take notes
+Step 1 of 3
+Step 2 of 3
+Step 3 of 3
+Summary
+Support wants a short FAQ before invites go out.
+TODAY
+Take notes now
+Talk while held. Let go to paste.
+Test connection
+Thanks for the quick turnaround, let's lock it for Friday.
+The team agreed to ship the beta on 12 December and hold pricing until January.
+The web address from your AI service's instructions, for example https://api.openai.com/v1. It must start with https:// (http:// is only allowed for one running on this PC).
+Tidy up my dictation with AI
+Today
+Today so far
+Today · 11:42 · tidied up by your AI helper
+Try a dictation
+Try a dictation · done
+Tuesday, November 24
+Tuesday, November 24, 2026 at 10:00
+US dollars per million tokens sent / received. A token is about ¾ of a word. Only used for the estimate below.
+Voice
+Want smarter clean-up?
+What it's cost
+What you actually said
+Where meeting notes are saved, as plain files you can open, search and back up. Tip: a folder inside Google Drive backs them up automatically.
+Which AI
+Which version of the AI to use. The default is fast and cheap.
+Win
+Windows default
+Word
+Write the summary again
+X
+YESTERDAY
+Yappr
+Yappr already fixes the basics on this PC. With an AI helper it also fixes punctuation, “um”s and rambling. Only the text is sent, never your voice, and it costs about a cent a day. You can skip this and add it later in Settings.
+Yappr can offer to take notes when a meeting starts. In Google Calendar: Settings → your calendar → “Secret address in iCal format”.
+Yappr unloads its speech engine when you haven't dictated for a while; the next dictation then takes a second longer. 0 keeps it ready.
+Your key
+Your meeting notes will appear here.
+Your words will appear here…
+Z
+[0:03:10] Launch date proposed
+[0:21:45] Pricing discussion
+again to stop.
+and say something, like what you had for breakfast. Let go, and your words are typed for you.
+and start talking. Let go and your words are typed for you.
+data-start="notes">
+data-start="settings">
+data-start="today">
+data-start="words">
+days
+dictations
+done
+hold
+instead of X pauses.
+key a saki, kiyo saki
+meeting noted
+meetings noted
+min before
+min idle
+on the bar at the bottom of your screen when a call starts. Yappr records your mic and the call on this PC, and writes a summary with next steps when it ends.
+on the bar at the bottom of your screen when a call starts. Yappr records your mic and the call on this PC, then writes a summary with next steps.
+sounds like “key a saki”
+sounds like “preeya”
+thanks for the uh quick turnaround lets lock it for friday
+to do
+words dictated
+· 47 min · 3 next steps
+“Can you send me the deck before standup?”
+“Thanks for the quick turnaround, let's lock it for Friday.”
+✓
