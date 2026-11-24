@@ -44,3 +44,4 @@ Base: rename/yappr-app @ 955d29e · Branch: ui/v1 (worktree ../yappr-ui, so the 
 - F15 fixed: "rate limit"/"rate_limit" instead of "rate". Test added.
 - F16: pywebview sets AreDefaultScriptDialogsEnabled = True (webview/platforms/edgechromium.py on_webview_ready), so confirm() shows the native dialog; owner checks it in staging step 8.
 - Stopping review here: no blocker or should open except owner decisions (F5 memory, F6 font, F7 tray screenshot -> D2 sign-off).
+- Owner decision 2026-11-24: keep pywebview at ~237 MB while the window is open (reviewer F5 closed).

@@ -21,7 +21,7 @@
 | D7 | Not slower | ✓ pass | startup 1.0–1.2 s (was 1.35–1.94 s); idle 250 MB (was 250); stop→paste median 0.73 s (was 0.68 s, ranges overlap) |
 
 ## Decisions waiting on you
-1. **Window memory:** you approved pywebview on my estimate of 80–150 MB while the window is open. Measured: **about 237 MB** while open (Python 64 MB + WebView2). It's all freed when the window closes (verified), and idle memory is unchanged. Keep it, or switch the window to Tkinter (plainer look)?
+1. ~~Window memory~~ **Decided 2026-11-24: keep pywebview.** The owner accepted about 237 MB while the window is open (freed on close; idle unchanged).
 2. **Font:** DESIGN.md says Atkinson Hyperlegible, bundled. The build uses Segoe UI Variable (built into Windows), because bundling Atkinson means downloading its font files (free, OFL licence), which needs your OK. Download and bundle it, or keep Segoe?
 3. **D2 sign-off** on `loop-ui/review.html`.
 
