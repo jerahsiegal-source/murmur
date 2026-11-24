@@ -5,6 +5,7 @@ through yappr/api.py.
 """
 from __future__ import annotations
 
+import os
 import sys
 import winreg
 from pathlib import Path
@@ -42,16 +43,36 @@ def set_startup(on: bool) -> None:
                 pass
 
 
+def legacy_startup_shortcut() -> Path:
+    """Murmur could also start with Windows through a shortcut in the Startup folder."""
+    return Path(os.environ.get("APPDATA", "")) / "Microsoft/Windows/Start Menu/Programs/Startup/Murmur.lnk"
+
+
+def _starts_murmur(lnk: Path) -> bool:
+    try:
+        data = lnk.read_bytes()
+    except OSError:
+        return False
+    return any("-m murmur".encode(enc) in data for enc in ("utf-16-le", "ascii"))
+
+
 def migrate_startup() -> bool:
     """If Murmur was set to start with Windows, start Yappr instead. Returns True if it changed anything."""
+    changed = False
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE) as k:
             winreg.QueryValueEx(k, LEGACY_STARTUP_VALUE)
             winreg.SetValueEx(k, STARTUP_VALUE, 0, winreg.REG_SZ, startup_command())
             winreg.DeleteValue(k, LEGACY_STARTUP_VALUE)  # its command (-m murmur) no longer exists
-            return True
+            changed = True
     except OSError:
-        return False
+        pass
+    lnk = legacy_startup_shortcut()
+    if _starts_murmur(lnk):
+        set_startup(True)  # before removing the shortcut, so a failure never leaves nothing starting
+        lnk.unlink()
+        changed = True
+    return changed
 
 
 def input_devices() -> list[str]:
