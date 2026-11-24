@@ -2,7 +2,7 @@
 
 Usage: python tools/meeting_run.py <dir with mic.wav/sys.wav> <out_meetings_dir> [speed] [chunk_s]
 Prints RSS over time, then the transcript/summary paths. Uses the API key from Credential
-Manager / MURMUR_API_KEY if present (for the summary); otherwise the summary is a placeholder.
+Manager / MURMUR_ANTHROPIC_API_KEY (Claude) or MURMUR_API_KEY (OpenAI-compatible) if present (for the summary); otherwise the summary is a placeholder.
 """
 import os
 import sys

@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,6 +16,40 @@ log = logging.getLogger(__name__)
 
 class LLMError(Exception):
     pass
+
+
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def base_url_problem(url: str) -> str | None:
+    """Why the API key must not be sent to this base URL, or None if it's fine.
+
+    The key travels in a request header, so it needs an encrypted connection. Plain http is allowed
+    only for a model server on this computer (Ollama, LM Studio, ...), where nothing crosses the network.
+    """
+    try:
+        u = urllib.parse.urlsplit((url or "").strip())
+        host = (u.hostname or "").lower()
+    except ValueError:
+        return "Base URL is not a valid address"
+    if not host:
+        return "Base URL is not a valid address"
+    if u.scheme == "https":
+        return None
+    if u.scheme == "http" and host in _LOCAL_HOSTS:
+        return None
+    return "Base URL must start with https:// (plain http is allowed only for localhost)"
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """urllib would re-send the Authorization header to wherever a redirect points, even another host
+    or plain http. API endpoints don't redirect, so treat any redirect as an error instead."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.URLError(f"the server tried to redirect (HTTP {code}); not following it with your API key")
+
+
+_opener = urllib.request.build_opener(_NoRedirect)
 
 
 class LLMClient:
@@ -35,6 +70,9 @@ class LLMClient:
              max_tokens: int | None = None) -> str:
         if not self.available:
             raise LLMError("no API key configured")
+        problem = base_url_problem(self.base_url)
+        if problem:
+            raise LLMError(problem)
         model = model or self.model
         body = {
             "model": model,
@@ -51,7 +89,7 @@ class LLMClient:
         )
         t = time.monotonic()
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with _opener.open(req, timeout=timeout) as r:
                 data = json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:300]

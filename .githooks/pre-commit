@@ -1,0 +1,10 @@
+#!/bin/sh
+# Blocks a commit that would add an API key, personal data or a recording.
+# Turn on once per clone:  git config core.hooksPath .githooks
+for py in .venv/Scripts/python.exe .venv/bin/python python3 python py; do
+  if command -v "$py" >/dev/null 2>&1 || [ -x "$py" ]; then
+    exec "$py" tools/scan_history.py --staged
+  fi
+done
+echo "pre-commit: no Python found, secret scan skipped" >&2
+exit 0

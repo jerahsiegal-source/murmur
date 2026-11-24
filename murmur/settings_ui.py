@@ -12,7 +12,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from . import storage
 from .config import PROVIDER_DEFAULTS, Store
-from .llm import PROVIDERS, usage_summary
+from .llm import PROVIDERS, base_url_problem, usage_summary
 
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
@@ -215,6 +215,11 @@ class SettingsWindow:
     # ---- actions
     def save(self) -> None:
         s = self.store.settings
+        if self.provider == "openai":  # the key would be sent there, so check before changing anything
+            problem = base_url_problem(self.vars["llm_base_url"].get())
+            if problem:
+                messagebox.showerror("Murmur", f"{problem}. Nothing was saved.", parent=self.win)
+                return
         try:
             for name, v in self.vars.items():
                 setattr(s, name, v.get())

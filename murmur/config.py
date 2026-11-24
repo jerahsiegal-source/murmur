@@ -17,6 +17,9 @@ APP_NAME = "Murmur"
 KEYRING_SERVICE = "Murmur"
 KEYRING_USER = "llm-api-key"  # OpenAI-compatible key (name kept for existing installs)
 KEYRING_USERS = {"openai": KEYRING_USER, "claude": "anthropic-api-key"}
+# Optional environment overrides (for scripts/tests), one per provider so a key can never be sent to the
+# other provider's server. MURMUR_API_KEY is the original name and stays OpenAI-compatible only.
+ENV_KEYS = {"openai": "MURMUR_API_KEY", "claude": "MURMUR_ANTHROPIC_API_KEY"}
 
 # Defaults applied when switching provider in Settings (model, $ per 1M input, $ per 1M output)
 PROVIDER_DEFAULTS = {
@@ -132,9 +135,9 @@ class Store:
     # ---- secrets
     @staticmethod
     def get_api_key(provider: str = "openai") -> str:
-        env = os.environ.get("MURMUR_API_KEY")
+        env = os.environ.get(ENV_KEYS.get(provider, ENV_KEYS["openai"]))
         if env:
-            return env
+            return env.strip()
         try:
             import keyring
 

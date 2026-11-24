@@ -46,7 +46,7 @@ Right-click the bar (or tray icon → **Settings…**) → **AI cleanup**:
     - OpenRouter: `https://openrouter.ai/api/v1`
     - Groq: `https://api.groq.com/openai/v1`
     - Google Gemini: `https://generativelanguage.googleapis.com/v1beta/openai`
-- **API key**: stored in Windows Credential Manager (one per provider), never in a file.
+- **API key**: stored in Windows Credential Manager (one per provider), never in a file, and sent only to the provider you picked over https. See [SECURITY.md](SECURITY.md) for the details, and set a monthly spending limit in your provider's console.
 - **$ / 1M tokens**: filled in for the default models, and used only for the local cost log shown on that tab.
 - Click **Test connection**, then **Save**.
 
@@ -105,6 +105,7 @@ Network use: only the AI endpoint you configure (text only), the calendar feed i
 ```powershell
 .venv\Scripts\python.exe -m pip install -e .[dev]
 .venv\Scripts\python.exe -m pytest -q
+git config core.hooksPath .githooks   # blocks commits that would add a key or personal data
 ```
 
 `tools/` holds the end-to-end checks used during development: real hotkeys with a WAV file standing in for the mic (`MURMUR_FAKE_MIC`), a synthetic two-person meeting generator, a network/privacy logger and resource measurements. Set `MURMUR_TEST_CHORD=ctrl+shift` to run them without colliding with apps bound to Ctrl+Win, and `MURMUR_DATA_DIR` to keep test data separate.
