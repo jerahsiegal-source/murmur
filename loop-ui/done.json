@@ -49,17 +49,17 @@
   "item": "No regressions: dictation, hands-free, Alt+Shift+Z re-paste, meetings, read-aloud, dictionary and history all behave as before.",
   "check": "The existing test suite passes, and the `tools/e2e_*` scripts pass.",
   "kind": "regression",
-  "status": "pending",
-  "attempts": 0,
-  "evidence": ""
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "pytest 142 passed (121 before + 21 new). e2e on new code (fake mic, Ctrl+Shift chord): hold paste OK; hands-free paste OK; Alt+Shift+Z re-paste OK, no literal Z; back-to-back 2/2 pasted + non-text clipboard restored (same as base: 2/2, restored; the script's 'Priya' counter matches no current clip, so judged by the sentence appearing twice); read-aloud first sound 0.82 s, no gaps, stop silent, clipboard restored; meeting record -> notes (D5); dictionary via My words + tests; history in Notes -> Dictations. One cancelled run traced to a key press during the hold ('hotkey cancel', same handling as base)."
  },
  {
   "id": "D7",
   "item": "Not slower: hotkey -> paste latency, startup time and idle memory are no worse than before.",
   "check": "numbers measured before and after",
   "kind": "regression",
-  "status": "pending",
-  "attempts": 0,
-  "evidence": ""
+  "status": "pass",
+  "attempts": 2,
+  "evidence": "Same profile, clip (30 s), scripts as baseline. Startup launch->'Yappr started': base 1.35/1.94/1.72 s, new 1.18/0.98/1.24/1.09 s. Idle memory at 15-20 s: base 250 MB WS / 240 private, new 250-251 / 239-240. Stop->paste: base 0.79 0.76 0.70 0.78 0.60 0.65 0.59 0.59 (median 0.68); new after the bar fix 0.73 0.89 0.73 0.68 0.66 (median 0.73), ranges overlap. Before the fix new was median 0.85: the bar re-measured text with new font objects every 60 ms during 'processing'; now cached + 250 ms. Window open: ~237 MB private (python 64 + WebView2), all freed on close (verified), so idle is unchanged."
  }
 ]

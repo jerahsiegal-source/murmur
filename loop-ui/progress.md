@@ -21,3 +21,6 @@ Base: rename/yappr-app @ 955d29e · Branch: ui/v1 (worktree ../yappr-ui, so the 
 - D3 pass (attempt 1 after fixes): blank window traced to a non-JSON value in state() (pywebview serializes answers as JSON) -> removed and covered by test_every_answer_the_page_reads_is_json; page start waited for pywebviewready; welcome comes to the front once; other-AI path kept inside the welcome.
 - Decision: env-gated test driver in window.py (YAPPR_WINDOW_TEST_DIR, set only by tools) to drive the live page; off in normal use.
 - D5 pass. Added YAPPR_FAKE_MEETING (+_SPEED) test hook: a recorded call played into a real MeetingSession, like YAPPR_FAKE_MIC for dictation. First read-aloud run reported silent_after_stop=false only because the test sentence ended before the stop key (it restarted reading); with longer text: stop is silent.
+- D7 attempt 1 failed: new latency median 0.85 vs base 0.68. Cause: bar redraw cost during 'processing' (font objects created per measure, 60 ms ticks) competing with speech-to-text. Fix: cached fonts/widths, 250 ms ticks outside listening. Attempt 2: median 0.73, ranges overlap -> pass (honest note: ~0.05 s median difference is within run-to-run spread).
+- Window memory while open is ~237 MB private, above the 80-150 MB estimate given to the owner at the toolkit gate. Freed on close; idle unchanged. Reported in handoff.
+- D6 pass, D7 pass.

@@ -129,6 +129,8 @@ class Bar:
         self.font = (fam, 10)
         self.font_b = (_bold(fam), 10)
         self.skip = load_skip(int(30 * self.s))
+        self._fonts = None
+        self._widths: dict = {}
 
         self.win = tk.Toplevel(root)
         self.win.overrideredirect(True)
@@ -193,7 +195,9 @@ class Bar:
         lv = min(1.0, (self.level * 12) ** 0.6)
         self.levels = self.levels[1:] + [lv]
         self.render()
-        self._anim = self.root.after(250 if self.state == "meeting" else 60, self._tick)
+        # the wave needs ~16 fps while listening; the dots and the meeting timer need far less, and
+        # redrawing less while the speech is being turned into text leaves it the CPU
+        self._anim = self.root.after({"listening": 60, "handsfree": 60, "processing": 250}.get(self.state, 250), self._tick)
 
     # ---- drag to move; a press that doesn't move is a click
     def _press(self, e) -> None:
@@ -255,10 +259,20 @@ class Bar:
         self.win.geometry(f"{w}x{h}+{x}+{y}")
 
     def _text_w(self, text: str, bold: bool = False) -> int:
-        try:
-            return tkfont.Font(root=self.root, font=self.font_b if bold else self.font).measure(text)
-        except tk.TclError:
-            return int(7 * len(text) * self.s)
+        """Text width in px, cached: the bar redraws often while listening and must stay cheap."""
+        k = (text, bold)
+        w = self._widths.get(k)
+        if w is None:
+            try:
+                if self._fonts is None:
+                    self._fonts = (tkfont.Font(root=self.root, font=self.font), tkfont.Font(root=self.root, font=self.font_b))
+                w = self._fonts[bold].measure(text)
+            except tk.TclError:
+                w = int(7 * len(text) * self.s)
+            if len(self._widths) > 200:
+                self._widths.clear()
+            self._widths[k] = w
+        return w
 
     def _countdown(self) -> str:
         try:
