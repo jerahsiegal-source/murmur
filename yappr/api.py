@@ -359,7 +359,7 @@ class Api:
         return bool(on)
 
     def test_connection(self, provider: str, base_url: str, model: str, key: str = "") -> dict:
-        from .cleanup import SYSTEM_PROMPT
+        from .cleanup import system_prompt, user_message
         from .llm import base_url_problem, make_llm
 
         if provider == "openai":
@@ -373,8 +373,7 @@ class Api:
         client = make_llm(provider, base_url, key, model, s.price_in_per_m, s.price_out_per_m, self.store.root / "usage.jsonl")
         t = time.monotonic()
         try:
-            out = client.chat(SYSTEM_PROMPT.format(terms="(none)"),
-                              "<dictation>um so this is uh a quick test of the the cleanup</dictation>",
+            out = client.chat(system_prompt([]), user_message("um so this is uh a quick test of the the cleanup"),
                               kind="test", timeout=15)
             return {"ok": True, "message": f"Connected. Replied in {time.monotonic() - t:.1f} s", "sample": out}
         except Exception as e:
