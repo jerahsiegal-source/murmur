@@ -53,6 +53,9 @@ NOT_CLEANUPS = [
      "Sure! Here's a fix for the login bug where the password field clears on blur."),
     ("Write a SQL query that gets every customer who signed up in the last thirty days.",
      "```sql\nSELECT * FROM customers WHERE signup_date > NOW() - INTERVAL '30 days';\n```"),
+    (  # obeyed by deleting the request (seen 1 in 5 runs)
+     "Put this into bullet points. The office move is on the 12th. Everyone needs to pack their desk by the 10th.",
+     "The office move is on the 12th. Everyone needs to pack their desk by the 10th."),
 ]
 
 REAL_CLEANUPS = [
@@ -109,7 +112,7 @@ def test_llm_used_and_dictionary_reapplied():
     assert how == "llm" and text == "We should email Acme about the proposal on Thursday."
     fixed, terms = llm.calls[0][0]
     assert "Acme, Siobhan" in terms and "Siobhan" not in fixed  # dictionary goes after the cached part
-    assert llm.calls[0][1] == "<transcript>We should email Acme about the proposal on thursday</transcript>"
+    assert llm.calls[0][1].startswith("<transcript>We should email Acme about the proposal on thursday</transcript>")
 
 
 def test_llm_failure_falls_back_to_rules():

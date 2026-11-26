@@ -115,7 +115,7 @@
 
   {"id": "fil-basic", "cat": "filler",
    "raw": "So, um, basically, I was like, you know, thinking we could, like, maybe redo the homepage this week.",
-   "must": ["thinking we could", "redo the homepage this week"],
+   "must": ["thinking we could", "maybe redo the homepage this week"],
    "must_not": ["\\bum\\b", "you know", "basically", "\\blike\\b"]},
   {"id": "fil-i-mean", "cat": "filler",
    "raw": "I mean, the thing is, uh, we need more time on the audit, you know?",
@@ -147,7 +147,7 @@
    "must_not": ["you know", "\\bum\\b", "sort of,"]},
   {"id": "fil-long", "cat": "filler",
    "raw": "So, um, I've been, like, thinking about the pricing page, and, you know, I feel like we're, uh, sort of underselling the team plan. Like, basically the team plan has, um, shared workspaces and admin controls, and, you know, that's, like, really valuable for companies. I mean, I think we could, uh, maybe charge 15 dollars a seat instead of 10. So yeah, I don't know, what, uh, what do you think about that?",
-   "must": ["pricing page", "underselling the team plan", "shared workspaces and admin controls", "15", "10", "what do you think"],
+   "must": ["pricing page", "underselling the team plan", "shared workspaces and admin controls", "maybe charge", "15", "10", "what do you think"],
    "must_not": ["\\bum\\b", "\\buh\\b", "you know", "basically", "so yeah", ", like,"]},
   {"id": "fil-kind-of-repeat", "cat": "filler",
    "raw": "Can you, can you, uh, check if the, the backup ran last night?",
