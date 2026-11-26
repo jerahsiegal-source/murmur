@@ -1,12 +1,92 @@
 [
-  {"id": "D1", "item": "Never acts on what I said. Dictations that contain instructions (make a checklist, plan this, summarise, answer this question, write an email) come back as the cleaned transcription. That includes a long one that ends in an instruction, like the one that failed. Nothing gets answered, summarised or restructured into a different artifact.", "check": "eval set, 0 failures on these cases", "kind": "user-facing", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D2", "item": "Self-corrections resolved. \"X, no, strike that, actually Y\" (and variants: \"scratch that\", \"I mean\", \"wait, no\", \"let me rephrase\", corrections that reach back a sentence or more) leaves only Y. Both the retracted part and the correction phrase are gone.", "check": "eval cases pass", "kind": "user-facing", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D3", "item": "Filler removed. um/uh, \"you know\", \"like\", \"I mean\", \"sort of\", \"basically\", \"so yeah\" when used as filler, plus false starts and stutters.", "check": "eval cases pass, and a filler count on cleaned history output drops clearly from today's output", "kind": "user-facing", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D4", "item": "Nothing I meant is lost. No dropped sentences, facts, names or numbers, and no added content. When unsure whether something is filler or a correction, keep it.", "check": "eval cases with tricky real uses (\"I like it\", \"actually\" as emphasis) pass. A content-preservation check over the history set flags no losses.", "kind": "user-facing", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D5", "item": "Formatting kept. Spoken lists become bullets. Long dictations get paragraph breaks where the topic changes.", "check": "eval cases", "kind": "user-facing", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D6", "item": "Bad output is caught. If the model still returns something that isn't a cleanup (a checklist I didn't dictate, an answer, a summary), Yappr detects it and falls back rather than pasting it.", "check": "feed known-bad outputs to the check; all are rejected", "kind": "code", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D7", "item": "Speed same or better. Median and slow-case cleanup time, short and long dictations, is no worse than today's.", "check": "timing before/after on the same set", "kind": "code", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D8", "item": "Measurably better than today. The eval set is scored on the current build and the new one, and the new one wins on every category above.", "check": "before/after report", "kind": "judgment", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D9", "item": "End to end. Dictate in the real app: a long instruction-style message, a \"strike that\" correction, a filler-heavy ramble. The pasted text is right each time.", "check": "owner check", "kind": "user-facing", "status": "pending", "attempts": 0, "evidence": ""},
-  {"id": "D10", "item": "No regressions. Existing tests pass. Dictionary spellings, the no-AI fallback and meeting notes still work.", "check": "full test suite plus the dictionary / fallback / meeting tests", "kind": "regression", "status": "pending", "attempts": 0, "evidence": ""}
+ {
+  "id": "D1",
+  "item": "Never acts on what I said. Dictations that contain instructions (make a checklist, plan this, summarise, answer this question, write an email) come back as the cleaned transcription. That includes a long one that ends in an instruction, like the one that failed. Nothing gets answered, summarised or restructured into a different artifact.",
+  "check": "eval set, 0 failures on these cases",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Instruction cases x5 on final code (r10): cases 70/70, holdout 25/25, final 25/25 (old on final: 14/15, reproduced the checklist bug 3/3 on cases). Speech e2e long-dictation-ending-in-request PASS. History acted_on 0. Guard unit tests test_outputs_that_act_on_the_dictation_are_rejected."
+ },
+ {
+  "id": "D2",
+  "item": "Self-corrections resolved. \"X, no, strike that, actually Y\" (and variants: \"scratch that\", \"I mean\", \"wait, no\", \"let me rephrase\", corrections that reach back a sentence or more) leaves only Y. Both the retracted part and the correction phrase are gone.",
+  "check": "eval cases pass",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Correction cases x5 (r10): 70/70, 25/25, 25/25; old cases 39/42, holdout 12/15. Includes reach-back cases (cor-not-bread, cor-reach-back-list, f-cor-no-strike-reach). Speech e2e strike-that PASS."
+ },
+ {
+  "id": "D3",
+  "item": "Filler removed. um/uh, \"you know\", \"like\", \"I mean\", \"sort of\", \"basically\", \"so yeah\" when used as filler, plus false starts and stutters.",
+  "check": "eval cases pass, and a filler count on cleaned history output drops clearly from today's output",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Filler cases x5 (r10): 50/50, 15/15, 15/15 (old final 3/9). History filler left: old 5, new 1 and 3 (remaining are metric false positives)."
+ },
+ {
+  "id": "D4",
+  "item": "Nothing I meant is lost. No dropped sentences, facts, names or numbers, and no added content. When unsure whether something is filler or a correction, keep it.",
+  "check": "eval cases with tricky real uses (\"I like it\", \"actually\" as emphasis) pass. A content-preservation check over the history set flags no losses.",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Preserve cases x5: 60/60, 25/25, 25/25. History lost-content flags old 1-2, new 0-2 (sentence merges, no dropped facts/numbers); new-word share 0.7-0.8% vs old 1.6-1.9% (less rewording)."
+ },
+ {
+  "id": "D5",
+  "item": "Formatting kept. Spoken lists become bullets. Long dictations get paragraph breaks where the topic changes.",
+  "check": "eval cases",
+  "kind": "user-facing",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Format cases x5: 20/20, 10/10, 10/10 (counted lists -> numbered list; topic change -> paragraph; inline lists stay prose)."
+ },
+ {
+  "id": "D6",
+  "item": "Bad output is caught. If the model still returns something that isn't a cleanup (a checklist I didn't dictate, an answer, a summary), Yappr detects it and falls back rather than pasting it.",
+  "check": "feed known-bad outputs to the check; all are rejected",
+  "kind": "code",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "tests/test_cleanup.py NOT_CLEANUPS (8 real bad outputs incl. old checklist, plan with checkboxes, summary bullets, answer, Spanish translation, 'Sure!', SQL code, dropped request) all rejected; tests fail against origin/main guard. Over 2,636 new-prompt outputs: 0 false rejections; rejects exactly the 2 real dropped-request outputs."
+ },
+ {
+  "id": "D7",
+  "item": "Speed same or better. Median and slow-case cleanup time, short and long dictations, is no worse than today's.",
+  "check": "timing before/after on the same set",
+  "kind": "code",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Paired old/new speed on owner history (x3): short median 0.36->0.35 s, p90 0.87->0.85; long median 0.89->0.69, p90 1.28->1.24. Cost per call -31% (prompt cache)."
+ },
+ {
+  "id": "D8",
+  "item": "Measurably better than today. The eval set is scored on the current build and the new one, and the new one wins on every category above.",
+  "check": "before/after report",
+  "kind": "judgment",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "Before/after on untouched final.json: old 50/60 (x3), new 100/100 (x5); new wins or ties in every category."
+ },
+ {
+  "id": "D9",
+  "item": "End to end. Dictate in the real app: a long instruction-style message, a \"strike that\" correction, a filler-heavy ramble. The pasted text is right each time.",
+  "check": "owner check",
+  "kind": "user-facing",
+  "status": "pending",
+  "attempts": 1,
+  "evidence": "Owner check in the real app. Pipeline-level evidence: tools/cleanup_eval/e2e_speech.py (Windows TTS -> Parakeet -> cleanup) 3/3 PASS. Running Yappr was not restarted."
+ },
+ {
+  "id": "D10",
+  "item": "No regressions. Existing tests pass. Dictionary spellings, the no-AI fallback and meeting notes still work.",
+  "check": "full test suite plus the dictionary / fallback / meeting tests",
+  "kind": "regression",
+  "status": "pass",
+  "attempts": 1,
+  "evidence": "pytest: 178 passed (baseline 172; 6 new tests). Dictionary test, LLM-failure fallback test, meeting tests unchanged and passing."
+ }
 ]
