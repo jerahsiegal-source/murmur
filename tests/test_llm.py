@@ -58,7 +58,7 @@ def test_fixed_prompt_is_cached_and_cache_cost_logged(tmp_path):
     c.chat(["long fixed rules", "Use these exact spellings: Acme", ""], "<transcript>x</transcript>",
            kind="dictation", timeout=4)
     assert sdk.messages.calls[0]["system"] == [
-        {"type": "text", "text": "long fixed rules", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": "long fixed rules", "cache_control": {"type": "ephemeral", "ttl": "1h"}},
         {"type": "text", "text": "Use these exact spellings: Acme"}]
     rec = json.loads((tmp_path / "usage.jsonl").read_text())
     assert rec["cache_read"] == 1200

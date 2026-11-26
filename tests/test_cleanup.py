@@ -70,6 +70,15 @@ REAL_CLEANUPS = [
      "Here's the thing: the server keeps crashing every night around 2 a.m."),
     ("Okay I need to prep for the trip. Can you turn that into a to-do list with deadlines?",
      "Okay, I need to prep for the trip. Can you turn that into a to-do list with deadlines?"),
+    # a request the speaker took back may disappear (found in review)
+    ("Write the email to Bob about the delayed shipment. No wait, scratch that. Text Ana instead and tell her it ships Friday.",
+     "Text Ana and tell her it ships Friday."),
+    ("Make the button blue and bigger. Actually never mind, leave the button alone and fix the header spacing.",
+     "Leave the button alone and fix the header spacing."),
+    ("Fix the bug in auth dot py where the token expires. Actually no, never mind that, the bug is in session dot py.",
+     "Fix the bug in session.py."),
+    # ** inside a code word is not bold
+    ("The helper uses double star kwargs so you can pass anything.", "The helper uses **kwargs so you can pass anything."),
 ]
 
 
@@ -131,7 +140,8 @@ def test_short_clean_dictation_skips_llm_but_anything_to_fix_does_not():
     text, how = Cleaner(llm, store()).clean("Can you fix the conflict that I just created?")
     assert how == "rules" and text == "Can you fix the conflict that I just created?" and not llm.calls
     for raw in ["Send it to John, no, to Maria.", "I was like thinking about it.", "Do a P R and merge.",
-                "Call it flow hyphen ux please.", "We should we should go now.",
+                "Call it flow hyphen ux please.", "We should we should go now.", "Is it ready question mark",
+                "let me know when your free",
                 "Please send the final invoice to the client before the end of this week so they can pay us."]:  # 18 words
         llm = FakeLLM(raw)
         Cleaner(llm, store()).clean(raw)

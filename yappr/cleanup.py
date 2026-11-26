@@ -109,14 +109,16 @@ _FAST_MAX_WORDS = 16
 _NEEDS_LLM = re.compile(
     r"\b(?:u+m+|u+h+|e+r+m*|h+m+|like|you know|i mean|basically|sort of|kind of|so yeah|right|okay so|actually|no|"
     r"nope|wait|sorry|scratch|strike|never ?mind|rephrase|instead|whatever|first|second|step|number|hyphen|dash|"
-    r"slash|dot|period|comma|colon|quote|new line|new paragraph|bracket)\b"
+    r"slash|dot|period|comma|colon|quote|question mark|exclamation|new line|new paragraph|bracket)\b"
     r"|\b(\w+(?: \w+){0,2}),? \1\b"  # repeated word or phrase (a false start)
     r"|\b[A-Za-z] [A-Za-z]\b",  # spelled-out letters ("P R")
     re.IGNORECASE)
 
 
 def needs_llm(raw: str) -> bool:
-    return len(raw.split()) > _FAST_MAX_WORDS or bool(_NEEDS_LLM.search(raw))
+    raw = raw.strip()
+    return (len(raw.split()) > _FAST_MAX_WORDS or bool(_NEEDS_LLM.search(raw))
+            or not raw.endswith((".", "?", "!")))  # no end punctuation: the speech engine didn't punctuate it
 
 
 def system_prompt(entries: list[dict]) -> list[str]:
@@ -133,7 +135,7 @@ def user_message(text: str) -> str:
 _OPENER = re.compile(r"^\W*(?:sure|certainly|of course|absolutely|here(?:'s| is| are)|i can(?:'t| not)|i'm sorry|"
                      r"as an ai|okay, here|great question)\b", re.IGNORECASE)
 _LIST_LINE = re.compile(r"^\s*(?:[-*•]|\d+[.)]|\[[ xX]?\])\s+", re.MULTILINE)
-_MARKUP = re.compile(r"^\s*#{1,6}\s|\*\*|```|\[[ xX]\]|☐|☑", re.MULTILINE)
+_MARKUP = re.compile(r"^\s*#{1,6}\s|\*\*\w[^*\n]*\*\*|```|\[[ xX]\]|☐|☑", re.MULTILINE)  # headings, bold, code, boxes
 # counting words; a list is only allowed when the speaker used at least two different ones (first + second, ...)
 _ENUM = re.compile(r"\b(first|second|third|fourth|fifth|step (?:one|two|three|[1-5])|number (?:one|two|three|[1-5]))(?:ly)?\b",
                    re.IGNORECASE)
@@ -147,6 +149,8 @@ def _counted_out(src: str) -> bool:
 _REQUEST = re.compile(r"^(?:okay,? |so,? |and |please,? |can you |could you |would you )*"
                       r"(?:put|turn|make|write|summari[sz]e|translate|create|list|convert|rewrite|format|reply|respond|"
                       r"give|draft|explain|answer|shorten|expand|fix|ignore)\b", re.IGNORECASE)
+_CORRECTION = re.compile(r"\b(?:no|wait|scratch|strike|never ?mind|actually|instead|forget|rephrase|i mean|sorry|"
+                         r"start over|ignore that)\b", re.IGNORECASE)
 _WORD = re.compile(r"[^\W_][\w']*")
 _STOP = set("""a an the and or but if then so to of in on at for with from by as is are was were be been it its this
 that these those i you he she we they me my your our their them us do does did have has had will would can could
@@ -168,7 +172,9 @@ def _looks_like_cleanup(src: str, out: str) -> bool:
     if (len(ow) >= 8 and novel > 0.35) or (len(ow) >= 4 and novel > 0.5):
         return False  # mostly new words: an answer, translation or rewrite
     # corrections and filler can cut a lot, but only by deleting: allow more shrink when nothing is new
-    floor = 0.3 if novel <= 0.05 else 0.45
+    floor = 0.45
+    if novel <= 0.05:
+        floor = 0.15 if _CORRECTION.search(src) else 0.3  # a correction can take back most of what was said
     if a < 8:
         if b > a + 6:
             return False
@@ -182,9 +188,12 @@ def _looks_like_cleanup(src: str, out: str) -> bool:
     if _MARKUP.search(out) and not _MARKUP.search(src):
         return False  # headings, bold, checkboxes, code: never part of a cleanup
     ow_set = set(ow)
-    for sentence in re.split(r"(?<=[.!?])\s+", src):
+    sentences = re.split(r"(?<=[.!?])\s+", src)
+    for i, sentence in enumerate(sentences):
         words = _content(sentence)
         if _REQUEST.search(sentence.strip()) and len(words) >= 2 and sum(w in ow_set for w in words) < len(words) / 2:
+            if _CORRECTION.search(" ".join(sentences[i:])):
+                continue  # the speaker took it back later, so dropping it is right
             return False  # the speaker's request was dropped: the model treated it as an instruction
     return True
 

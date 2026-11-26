@@ -110,8 +110,8 @@ class LLMClient:
 
     def _log_usage(self, kind: str, model: str, tin: int, tout: int, secs: float,
                    cache_read: int = 0, cache_write: int = 0) -> None:
-        # cached input is billed at 0.1x to read and 1.25x to write (5-minute cache)
-        cost = (tin + cache_read * 0.1 + cache_write * 1.25) / 1e6 * self.price_in + tout / 1e6 * self.price_out
+        # cached input is billed at 0.1x to read and 2x to write (1-hour cache)
+        cost = (tin + cache_read * 0.1 + cache_write * 2.0) / 1e6 * self.price_in + tout / 1e6 * self.price_out
         rec = {
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "kind": kind,
@@ -156,8 +156,8 @@ class ClaudeClient(LLMClient):
         model = model or self.model
         quick = kind in ("dictation", "test")
         if isinstance(system, list):
-            # cache the long fixed part: dictations come in bursts, so most calls read it at 0.1x
-            system = [{"type": "text", "text": system[0], "cache_control": {"type": "ephemeral"}}] + [
+            # cache the long fixed part for an hour: most dictations then read it at 0.1x (a write costs 2x)
+            system = [{"type": "text", "text": system[0], "cache_control": {"type": "ephemeral", "ttl": "1h"}}] + [
                 {"type": "text", "text": part} for part in system[1:] if part]
         params = {
             "model": model,
