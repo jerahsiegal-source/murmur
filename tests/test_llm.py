@@ -51,6 +51,44 @@ def test_dictation_request_is_fast_and_text_only(tmp_path):
     assert sdk.options == [{"timeout": 4}]
 
 
+def test_fixed_prompt_is_cached_and_cache_cost_logged(tmp_path):
+    resp = reply("Ok.", tin=30, tout=5)
+    resp.usage.cache_read_input_tokens, resp.usage.cache_creation_input_tokens = 1200, 0
+    c, sdk = client(tmp_path, resp)
+    c.chat(["long fixed rules", "Use these exact spellings: Acme", ""], "<transcript>x</transcript>",
+           kind="dictation", timeout=4)
+    assert sdk.messages.calls[0]["system"] == [
+        {"type": "text", "text": "long fixed rules", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": "Use these exact spellings: Acme"}]
+    rec = json.loads((tmp_path / "usage.jsonl").read_text())
+    assert rec["cache_read"] == 1200
+    assert rec["usd"] == pytest.approx((30 + 1200 * 0.1) / 1e6 * 0.10 + 5 / 1e6 * 0.50, abs=1e-6)
+
+
+def test_openai_compatible_joins_prompt_parts(tmp_path, monkeypatch):
+    seen = {}
+
+    class R:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return json.dumps({"choices": [{"message": {"content": "Ok."}}], "usage": {}}).encode()
+
+    def fake_open(req, timeout):
+        seen.update(json.loads(req.data))
+        return R()
+
+    import yappr.llm as llm_mod
+    monkeypatch.setattr(llm_mod._opener, "open", fake_open)
+    c = LLMClient("https://api.example.com/v1", "k", "m", 0.1, 0.4, tmp_path / "u.jsonl")
+    c.chat(["fixed", ""], "u", kind="dictation", timeout=4)
+    assert seen["messages"][0] == {"role": "system", "content": "fixed"}
+
+
 def test_meeting_summary_keeps_thinking_and_logs_cost(tmp_path):
     c, sdk = client(tmp_path, reply("## Summary\n- ok", tin=20000, tout=1000))
     c.chat("summary prompt", "[0:00:01] Me: hi", kind="meeting-summary", timeout=120)

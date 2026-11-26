@@ -66,10 +66,14 @@ class LLMClient:
     def available(self) -> bool:
         return bool(self.api_key and self.base_url and self.model)
 
-    def chat(self, system: str, user: str, *, kind: str, timeout: float, model: str | None = None,
+    def chat(self, system: str | list[str], user: str, *, kind: str, timeout: float, model: str | None = None,
              max_tokens: int | None = None) -> str:
+        """`system` may be a list of parts: the first is the long, fixed part (cached where the provider
+        supports it), the rest change between calls (e.g. the user's dictionary)."""
         if not self.available:
             raise LLMError("no API key configured")
+        if isinstance(system, list):
+            system = "\n\n".join(p for p in system if p)
         problem = base_url_problem(self.base_url)
         if problem:
             raise LLMError(problem)
@@ -104,8 +108,10 @@ class LLMClient:
         self._log_usage(kind, model, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), time.monotonic() - t)
         return text.strip()
 
-    def _log_usage(self, kind: str, model: str, tin: int, tout: int, secs: float) -> None:
-        cost = tin / 1e6 * self.price_in + tout / 1e6 * self.price_out
+    def _log_usage(self, kind: str, model: str, tin: int, tout: int, secs: float,
+                   cache_read: int = 0, cache_write: int = 0) -> None:
+        # cached input is billed at 0.1x to read and 1.25x to write (5-minute cache)
+        cost = (tin + cache_read * 0.1 + cache_write * 1.25) / 1e6 * self.price_in + tout / 1e6 * self.price_out
         rec = {
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "kind": kind,
@@ -115,6 +121,8 @@ class LLMClient:
             "usd": round(cost, 6),
             "secs": round(secs, 2),
         }
+        if cache_read or cache_write:
+            rec["cache_read"], rec["cache_write"] = cache_read, cache_write
         with self._lock:
             with open(self.usage_log, "a", encoding="utf-8") as f:
                 f.write(json.dumps(rec) + "\n")
@@ -139,7 +147,7 @@ class ClaudeClient(LLMClient):
             self._client = anthropic.Anthropic(api_key=self.api_key, max_retries=1)
         return self._client
 
-    def chat(self, system: str, user: str, *, kind: str, timeout: float, model: str | None = None,
+    def chat(self, system: str | list[str], user: str, *, kind: str, timeout: float, model: str | None = None,
              max_tokens: int | None = None) -> str:
         if not self.available:
             raise LLMError("no API key configured")
@@ -147,6 +155,10 @@ class ClaudeClient(LLMClient):
 
         model = model or self.model
         quick = kind in ("dictation", "test")
+        if isinstance(system, list):
+            # cache the long fixed part: dictations come in bursts, so most calls read it at 0.1x
+            system = [{"type": "text", "text": system[0], "cache_control": {"type": "ephemeral"}}] + [
+                {"type": "text", "text": part} for part in system[1:] if part]
         params = {
             "model": model,
             "max_tokens": max_tokens or 16000,
@@ -170,7 +182,9 @@ class ClaudeClient(LLMClient):
         if resp.stop_reason == "refusal":
             raise LLMError("Claude declined this request")
         text = "".join(b.text for b in resp.content if b.type == "text")
-        self._log_usage(kind, model, resp.usage.input_tokens, resp.usage.output_tokens, time.monotonic() - t)
+        u = resp.usage
+        self._log_usage(kind, model, u.input_tokens, u.output_tokens, time.monotonic() - t,
+                        getattr(u, "cache_read_input_tokens", 0) or 0, getattr(u, "cache_creation_input_tokens", 0) or 0)
         return text.strip()
 
 
