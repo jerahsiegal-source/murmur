@@ -16,13 +16,13 @@ Commits: eca5a57 eval tooling · 10234c0 prompt caching · 75a35c5 prompt, guard
 | D4 nothing lost | 110/110; new rewords half as much as old (0.7% vs 1.6–1.9% new words) |
 | D5 formatting | 40/40 |
 | D6 bad output caught | 8 real bad outputs rejected in unit tests; 0 false rejections over 4,302 new outputs |
-| D7 speed | owner history: short median 0.36→0.35 s, p90 0.87→0.85; long median 0.89→0.69, p90 1.28→1.24 |
+| D7 speed | owner history, final code: short median 0.51→0.46 s, p90 1.03→0.66; long median 1.05→0.81, p90 1.65→1.39 |
 | D8 better than today | untouched final set: old 50/60, new 100/100 |
 | D10 no regressions | pytest 178 passed (baseline 172) |
 
 ## Not done
 - **D9 owner check in the real app.** Pipeline check passes 3/3 (`tools/cleanup_eval/e2e_speech.py`: Windows voice → Parakeet → cleanup), but the running Yappr was not restarted.
-- **Cost gate (owner decision).** Replaying the owner's real dictation times: old ≈ $0.0087 per 120 dictations, new with the 1-hour cache ≈ $0.0092 (+5%). With a 5-minute cache it was +38%. Options: accept +5%, or trim the prompt's examples (risk to quality, needs re-scoring).
+- ~~Cost gate~~ **Approved by owner on 2026-11-28:** +5% cost (1-hour cache; old ≈ $0.0087, new ≈ $0.0092 per 120 dictations at real timing).
 
 ## Decisions
 - Bullets only when the speaker counts items out (first/second, step one/two). This was the root of the reported bug.

@@ -41,3 +41,5 @@ Brief: INTENT-cleanup.md · Base: origin/main (a845c71) · Branch: cleanup/v1
 - Added: request-dropped guard (catches the 1-in-5 "Put this into bullet points" deletion), hedge keep-rule, one worked example.
 - Open: history filler-left went 4 -> 7 after the hedge rule (some are metric false positives: "looks like", "that that happened"; real ones: "kind of like Whisperflow", "a couple, like, a minute"). Needs a look: the hedge rule may make the model keep borderline "like"/"kind of".
 - Not done: D9 owner check in the real app (restart Yappr from branch cleanup/v1), independent review, handoff.md, push.
+
+- 2026-11-28: owner approved the +5% cost (1-hour prompt cache). Final paired speed on owner history: short median 0.51->0.46 s, p90 1.03->0.66; long median 1.05->0.81, p90 1.65->1.39.
